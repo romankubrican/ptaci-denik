@@ -70,7 +70,7 @@ const ff = `'Playfair Display','Georgia',serif`;
 const fs = `'Source Sans 3','Segoe UI',sans-serif`;
 
 /* ═══════════════════════════════════════════════
-   STORAGE (localStorage)
+   STORAGE
    ═══════════════════════════════════════════════ */
 
 const STORE = {
@@ -79,7 +79,7 @@ const STORE = {
     catch { return null; }
   },
   set(key, val) {
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.error(e); }
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(e); }
   },
 };
 
@@ -87,94 +87,163 @@ const STORE = {
    HELPERS
    ═══════════════════════════════════════════════ */
 
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("cs-CZ",{day:"numeric",month:"long",year:"numeric"}) : "";
-const monthName = m => ["Led","Úno","Bře","Dub","Kvě","Čvn","Čvc","Srp","Zář","Říj","Lis","Pro"][m];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" }) : "";
+const monthName = m => ["Led", "Úno", "Bře", "Dub", "Kvě", "Čvn", "Čvc", "Srp", "Zář", "Říj", "Lis", "Pro"][m];
 
 /* ═══════════════════════════════════════════════
-   GLOBAL CSS
+   RESPONSIVE CSS (Mobile-first)
    ═══════════════════════════════════════════════ */
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-html,body,#root{min-height:100vh}
-body{background:${T.bg};font-family:${fs}}
-::-webkit-scrollbar{width:5px}
+html{-webkit-text-size-adjust:100%;overflow-x:hidden}
+html,body,#root{min-height:100vh;min-height:100dvh}
+body{background:${T.bg};font-family:${fs};overflow-x:hidden}
+::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:${T.border};border-radius:3px}
+
 input,select,textarea{
-  font-family:${fs};font-size:14px;border:1.5px solid ${T.border};border-radius:10px;
-  padding:10px 14px;background:${T.white};color:${T.text};outline:none;width:100%;
-  transition:border .2s,box-shadow .2s;
+  font-family:${fs};font-size:16px;border:1.5px solid ${T.border};border-radius:10px;
+  padding:12px 14px;background:${T.white};color:${T.text};outline:none;width:100%;
+  transition:border .2s,box-shadow .2s;-webkit-appearance:none;
 }
 input:focus,select:focus,textarea:focus{border-color:${T.green};box-shadow:0 0 0 3px ${T.greenSoft}}
-textarea{resize:vertical;min-height:56px}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+textarea{resize:vertical;min-height:60px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-.fade-up{animation:fadeUp .4s ease-out both}
+.fade-up{animation:fadeUp .35s ease-out both}
+
 .leaflet-container{border-radius:14px !important}
+
+/* Mobile bottom nav */
+.bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:${T.white};border-top:1px solid ${T.border};
+  padding:6px 0 env(safe-area-inset-bottom,8px);
+  box-shadow:0 -2px 12px rgba(0,0,0,.08);
+}
+.bottom-nav button{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;cursor:pointer;padding:6px 2px;
+  font-family:${fs};font-size:10px;font-weight:600;color:${T.textMuted};
+  transition:color .2s;
+}
+.bottom-nav button.active{color:${T.green}}
+.bottom-nav button .nav-icon{font-size:20px;line-height:1}
+
+/* Desktop top nav */
+.top-nav{display:flex;gap:2px;overflow-x:auto}
+.top-nav button{
+  font-family:${fs};font-size:13px;font-weight:600;padding:9px 16px;
+  border-radius:10px 10px 0 0;border:none;cursor:pointer;white-space:nowrap;
+  transition:all .2s;
+}
+
+@media(max-width:640px){
+  .bottom-nav{display:flex !important}
+  .top-nav{display:none !important}
+  .desktop-header-spacer{display:none !important}
+  main.main-content{padding-bottom:80px !important}
+}
+
+/* Card grid responsive */
+.bird-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+  gap:10px;
+}
+@media(max-width:400px){
+  .bird-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+}
+
+/* Stats grid */
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:16px;
+}
+@media(max-width:640px){
+  .stats-grid{grid-template-columns:1fr}
+}
+
+/* Pill scroll on mobile */
+.pill-row{display:flex;gap:5px;flex-wrap:wrap}
+@media(max-width:640px){
+  .pill-row{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .pill-row::-webkit-scrollbar{display:none}
+}
+
+/* Touch-friendly buttons */
+@media(max-width:640px){
+  .touch-btn{min-height:44px !important;min-width:44px !important}
+}
 `;
 
 /* ═══════════════════════════════════════════════
    MICRO COMPONENTS
    ═══════════════════════════════════════════════ */
 
-function Btn({ children, onClick, primary, small, disabled, style: sx }) {
+function Btn({ children, onClick, primary, small, disabled, style: sx, className }) {
   const base = {
     fontFamily: fs, fontWeight: 600, borderRadius: 10, border: "none",
-    cursor: disabled?"not-allowed":"pointer", transition: "all .2s",
-    opacity: disabled ? .45 : 1, display: "inline-flex", alignItems: "center", gap: 6,
-    fontSize: small ? 13 : 14, padding: small ? "7px 14px" : "11px 22px",
+    cursor: disabled ? "not-allowed" : "pointer", transition: "all .2s",
+    opacity: disabled ? .45 : 1, display: "inline-flex", alignItems: "center",
+    justifyContent: "center", gap: 6,
+    fontSize: small ? 13 : 14, padding: small ? "8px 14px" : "12px 22px",
   };
   const v = primary
     ? { background: T.green, color: T.white, boxShadow: "0 2px 10px rgba(61,122,52,.3)" }
     : { background: T.white, color: T.text, boxShadow: `inset 0 0 0 1.5px ${T.border}` };
-  return <button disabled={disabled} onClick={onClick} style={{ ...base, ...v, ...sx }}>{children}</button>;
+  return <button disabled={disabled} onClick={onClick} className={className || "touch-btn"} style={{ ...base, ...v, ...sx }}>{children}</button>;
 }
 
 function Search({ value, onChange, placeholder }) {
   return (
     <div style={{ position: "relative" }}>
-      <span style={{ position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:15,opacity:.35 }}>🔍</span>
-      <input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
-        style={{ paddingLeft: 40, borderRadius: 12, height: 44 }} />
+      <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 15, opacity: .35 }}>🔍</span>
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{ paddingLeft: 40, borderRadius: 12, height: 48 }} />
     </div>
   );
 }
 
 function CatPills({ selected, onChange, counts }) {
   const pill = (key, label, color, active) => (
-    <button key={key} onClick={()=>onChange(key===selected?null:key)} style={{
-      fontFamily:fs, fontSize:12, fontWeight:600, padding:"6px 13px", borderRadius:20,
-      border:`1.5px solid ${active?color:T.border}`, cursor:"pointer",
-      background:active?color+"18":T.white, color:active?color:T.textMuted,
-      transition:"all .2s", whiteSpace:"nowrap",
+    <button key={key} onClick={() => onChange(key === selected ? null : key)} style={{
+      fontFamily: fs, fontSize: 12, fontWeight: 600, padding: "7px 13px", borderRadius: 20,
+      border: `1.5px solid ${active ? color : T.border}`, cursor: "pointer",
+      background: active ? color + "18" : T.white, color: active ? color : T.textMuted,
+      transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0,
     }}>{label}</button>
   );
   return (
-    <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-      {pill(null, `Vše (${counts.all||0})`, T.green, !selected)}
-      {Object.entries(CATEGORIES).map(([k,c])=>pill(k,`${c.icon} ${c.name} (${counts[k]||0})`,c.color,selected===k))}
+    <div className="pill-row">
+      {pill(null, `Vše (${counts.all || 0})`, T.green, !selected)}
+      {Object.entries(CATEGORIES).map(([k, c]) => pill(k, `${c.icon} ${c.name} (${counts[k] || 0})`, c.color, selected === k))}
     </div>
   );
 }
 
 function Stat({ icon, value, sub, color }) {
   return (
-    <div style={{ background:T.card,borderRadius:14,padding:"18px 16px",border:`1.5px solid ${T.border}`,flex:"1 1 140px",minWidth:130 }}>
-      <div style={{ fontSize:26,marginBottom:4 }}>{icon}</div>
-      <div style={{ fontFamily:ff,fontSize:30,fontWeight:700,color:color||T.text }}>{value}</div>
-      <div style={{ fontFamily:fs,fontSize:12,color:T.textMuted,marginTop:1 }}>{sub}</div>
+    <div style={{ background: T.card, borderRadius: 14, padding: "16px 14px", border: `1.5px solid ${T.border}`, flex: "1 1 120px", minWidth: 100 }}>
+      <div style={{ fontSize: 24, marginBottom: 2 }}>{icon}</div>
+      <div style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: color || T.text }}>{value}</div>
+      <div style={{ fontFamily: fs, fontSize: 11, color: T.textMuted, marginTop: 1 }}>{sub}</div>
     </div>
   );
 }
 
 function Label({ children }) {
-  return <label style={{ fontFamily:fs,fontSize:13,fontWeight:600,color:T.brownMid,marginBottom:3,display:"block" }}>{children}</label>;
+  return <label style={{ fontFamily: fs, fontSize: 13, fontWeight: 600, color: T.brownMid, marginBottom: 4, display: "block" }}>{children}</label>;
 }
 
 /* ═══════════════════════════════════════════════
-   LEAFLET MAP
+   LEAFLET MAP - Sightings overview
    ═══════════════════════════════════════════════ */
 
 function SightingsMap({ sightings }) {
@@ -186,54 +255,55 @@ function SightingsMap({ sightings }) {
     if (!mapRef.current) return;
     if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
 
-    const map = L.map(mapRef.current, { scrollWheelZoom: true }).setView([49.75, 15.5], 7);
+    const map = L.map(mapRef.current, { scrollWheelZoom: true, tap: true }).setView([49.75, 15.5], 7);
     mapInstance.current = map;
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
       maxZoom: 18,
     }).addTo(map);
 
     withCoords.forEach(s => {
       const cat = CATEGORIES[s.birdCategory];
       const icon = L.divIcon({
-        html: `<div style="font-size:24px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));line-height:1">${cat?.icon||"🐦"}</div>`,
-        className: "", iconSize: [30, 30], iconAnchor: [15, 15],
+        html: `<div style="font-size:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));line-height:1">${cat?.icon || "🐦"}</div>`,
+        className: "", iconSize: [32, 32], iconAnchor: [16, 16],
       });
       L.marker([s.lat, s.lng], { icon })
         .addTo(map)
-        .bindPopup(`<div style="font-family:sans-serif;min-width:150px">
-          <strong style="font-size:14px">${s.birdName}</strong><br/>
+        .bindPopup(`<div style="font-family:sans-serif;min-width:140px;line-height:1.5">
+          <strong style="font-size:15px">${s.birdName}</strong><br/>
           <span style="font-size:12px;color:#666">📅 ${fmtDate(s.date)}</span><br/>
-          ${s.location?`<span style="font-size:12px;color:#666">📍 ${s.location}</span><br/>`:""}
-          ${s.observer?`<span style="font-size:12px;color:#666">👤 ${s.observer}</span>`:""}</div>`);
+          ${s.location ? `<span style="font-size:12px;color:#666">📍 ${s.location}</span><br/>` : ""}
+          ${s.observer ? `<span style="font-size:12px;color:#666">👤 ${s.observer}</span>` : ""}
+        </div>`);
     });
 
     if (withCoords.length > 0) {
       map.fitBounds(L.latLngBounds(withCoords.map(s => [s.lat, s.lng])), { padding: [40, 40], maxZoom: 13 });
     }
 
-    setTimeout(() => map.invalidateSize(), 200);
+    setTimeout(() => map.invalidateSize(), 250);
     return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } };
   }, [withCoords]);
 
   return (
     <div className="fade-up">
-      <h2 style={{ fontFamily:ff,fontSize:28,fontWeight:700,color:T.text,marginBottom:4 }}>Mapa pozorování</h2>
-      <p style={{ fontFamily:fs,fontSize:14,color:T.textMuted,marginBottom:16 }}>
+      <h2 style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: T.text, marginBottom: 4 }}>Mapa pozorování</h2>
+      <p style={{ fontFamily: fs, fontSize: 14, color: T.textMuted, marginBottom: 16 }}>
         {withCoords.length} pozorování se souřadnicemi z celkem {sightings.length}
       </p>
       {withCoords.length === 0 ? (
-        <div style={{ background:T.card,borderRadius:16,padding:48,textAlign:"center",border:`1.5px solid ${T.border}` }}>
-          <div style={{ fontSize:48,marginBottom:12 }}>🗺️</div>
-          <p style={{ fontFamily:fs,color:T.textMuted,lineHeight:1.6 }}>
-            Zatím žádná pozorování s GPS souřadnicemi.<br/>
-            Při přidávání záznamu klikněte na <strong>📍 Moje poloha</strong>.
+        <div style={{ background: T.card, borderRadius: 16, padding: "40px 20px", textAlign: "center", border: `1.5px solid ${T.border}` }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🗺️</div>
+          <p style={{ fontFamily: fs, color: T.textMuted, lineHeight: 1.6 }}>
+            Zatím žádná pozorování s GPS.<br />
+            Při přidávání záznamu klikněte na <strong>📍 Moje poloha</strong><br />nebo vyberte místo na mapě.
           </p>
         </div>
       ) : (
         <div ref={mapRef} style={{
-          height: 500, borderRadius: 16, border: `1.5px solid ${T.border}`,
+          height: "min(500px, 65vh)", borderRadius: 16, border: `1.5px solid ${T.border}`,
           overflow: "hidden", background: T.card,
         }} />
       )}
@@ -242,7 +312,7 @@ function SightingsMap({ sightings }) {
 }
 
 /* ═══════════════════════════════════════════════
-   MAP PICKER (for selecting location on map)
+   MAP PICKER (select location by tapping map)
    ═══════════════════════════════════════════════ */
 
 function MapPicker({ lat, lng, onSelect, onClose }) {
@@ -256,11 +326,11 @@ function MapPicker({ lat, lng, onSelect, onClose }) {
     const initLng = lng || 15.5;
     const initZoom = lat ? 14 : 7;
 
-    const map = L.map(mapRef.current).setView([initLat, initLng], initZoom);
+    const map = L.map(mapRef.current, { tap: true }).setView([initLat, initLng], initZoom);
     mapInstance.current = map;
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; OpenStreetMap', maxZoom: 18,
+      attribution: '&copy; OSM', maxZoom: 18,
     }).addTo(map);
 
     if (lat && lng) {
@@ -268,10 +338,10 @@ function MapPicker({ lat, lng, onSelect, onClose }) {
     }
 
     map.on("click", (e) => {
-      const { lat: newLat, lng: newLng } = e.latlng;
+      const { lat: nLat, lng: nLng } = e.latlng;
       if (markerRef.current) map.removeLayer(markerRef.current);
-      markerRef.current = L.marker([newLat, newLng]).addTo(map);
-      onSelect(newLat.toFixed(6), newLng.toFixed(6));
+      markerRef.current = L.marker([nLat, nLng]).addTo(map);
+      onSelect(nLat.toFixed(6), nLng.toFixed(6));
     });
 
     setTimeout(() => map.invalidateSize(), 200);
@@ -280,20 +350,23 @@ function MapPicker({ lat, lng, onSelect, onClose }) {
 
   return (
     <div style={{
-      position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:100,
-      display:"flex",alignItems:"center",justifyContent:"center",padding:16,
+      position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 200,
+      display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 0,
     }} onClick={onClose}>
-      <div className="fade-up" onClick={e=>e.stopPropagation()} style={{
-        background:T.card,borderRadius:20,padding:20,maxWidth:640,width:"100%",
-        boxShadow:"0 20px 60px rgba(0,0,0,.25)",
+      <div className="fade-up" onClick={e => e.stopPropagation()} style={{
+        background: T.card, borderRadius: "20px 20px 0 0", padding: "16px 16px 20px", width: "100%",
+        maxWidth: 640, maxHeight: "85vh",
+        boxShadow: "0 -10px 40px rgba(0,0,0,.2)",
       }}>
-        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
-          <h3 style={{ fontFamily:ff,fontSize:20,fontWeight:700,color:T.text }}>📍 Vyberte místo na mapě</h3>
-          <Btn small onClick={onClose}>✕ Zavřít</Btn>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <h3 style={{ fontFamily: ff, fontSize: 18, fontWeight: 700, color: T.text }}>📍 Klikněte na místo pozorování</h3>
+          <Btn small onClick={onClose}>✕</Btn>
         </div>
-        <div ref={mapRef} style={{ height: 400, borderRadius: 14, overflow: "hidden", border: `1px solid ${T.border}` }} />
-        <p style={{ fontFamily:fs,fontSize:12,color:T.textMuted,marginTop:8,textAlign:"center" }}>
-          Klikněte na mapu pro umístění špendlíku
+        <div ref={mapRef} style={{
+          height: "min(420px, 60vh)", borderRadius: 14, overflow: "hidden", border: `1px solid ${T.border}`,
+        }} />
+        <p style={{ fontFamily: fs, fontSize: 12, color: T.textMuted, marginTop: 8, textAlign: "center" }}>
+          Klikněte / ťukněte na mapu pro umístění špendlíku
         </p>
       </div>
     </div>
@@ -301,7 +374,7 @@ function MapPicker({ lat, lng, onSelect, onClose }) {
 }
 
 /* ═══════════════════════════════════════════════
-   AI ATLAS (calls /api/atlas serverless fn)
+   AI ATLAS (/api/atlas serverless function)
    ═══════════════════════════════════════════════ */
 
 function BirdInfoPanel({ birdName }) {
@@ -319,12 +392,13 @@ function BirdInfoPanel({ birdName }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ birdName }),
       });
-      if (!res.ok) throw new Error("API error");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const parsed = await res.json();
+      if (parsed.error) throw new Error(parsed.error);
       cache.current[birdName] = parsed;
       setInfo(parsed);
     } catch (e) {
-      setError("Nepodařilo se načíst informace z atlasu. Ujistěte se, že je ANTHROPIC_API_KEY nastaven v nastavení Vercel.");
+      setError("Nepodařilo se načíst atlas. Zkontrolujte ANTHROPIC_API_KEY v nastavení Vercelu.");
     }
     setLoading(false);
   };
@@ -340,20 +414,20 @@ function BirdInfoPanel({ birdName }) {
     return (
       <div className="fade-up" style={{
         background: `linear-gradient(135deg,${T.greenSoft},${T.amberSoft})`,
-        borderRadius: 14, padding: 20, marginTop: 16, border: `1px solid ${T.border}`,
+        borderRadius: 14, padding: "18px 16px", marginTop: 16, border: `1px solid ${T.border}`,
       }}>
-        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,flexWrap:"wrap",gap:6 }}>
-          <h4 style={{ fontFamily:ff,fontSize:18,fontWeight:600,color:T.text }}>📚 Atlas</h4>
-          <span style={{ fontFamily:fs,fontSize:13,fontStyle:"italic",color:T.brownMid }}>{info.latin}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, flexWrap: "wrap", gap: 6 }}>
+          <h4 style={{ fontFamily: ff, fontSize: 17, fontWeight: 600, color: T.text }}>📚 AI Atlas</h4>
+          <span style={{ fontFamily: fs, fontSize: 13, fontStyle: "italic", color: T.brownMid }}>{info.latin}</span>
         </div>
         {fields.map(([label, val]) => val && (
-          <div key={label} style={{ marginBottom: 8 }}>
-            <span style={{ fontFamily:fs,fontSize:12,fontWeight:700,color:T.greenText }}>{label}</span>
-            <p style={{ fontFamily:fs,fontSize:14,color:T.text,lineHeight:1.45,margin:"2px 0 0" }}>{val}</p>
+          <div key={label} style={{ marginBottom: 7 }}>
+            <span style={{ fontFamily: fs, fontSize: 12, fontWeight: 700, color: T.greenText }}>{label}</span>
+            <p style={{ fontFamily: fs, fontSize: 14, color: T.text, lineHeight: 1.45, margin: "2px 0 0" }}>{val}</p>
           </div>
         ))}
-        <div style={{ fontFamily:fs,fontSize:11,color:T.textMuted,marginTop:10,fontStyle:"italic" }}>
-          ℹ️ Generováno AI atlasem — doporučujeme ověřit v odborné literatuře
+        <div style={{ fontFamily: fs, fontSize: 11, color: T.textMuted, marginTop: 10, fontStyle: "italic" }}>
+          ℹ️ Generováno AI — doporučujeme ověřit v odborné literatuře
         </div>
       </div>
     );
@@ -362,14 +436,14 @@ function BirdInfoPanel({ birdName }) {
   return (
     <div style={{ marginTop: 14 }}>
       {loading ? (
-        <div style={{ textAlign:"center",padding:20,fontFamily:fs,color:T.textMuted }}>
-          <span style={{ display:"inline-block",animation:"spin 1s linear infinite",fontSize:20 }}>🔄</span>
-          <div style={{ marginTop:6 }}>Načítám informace z atlasu…</div>
+        <div style={{ textAlign: "center", padding: 20, fontFamily: fs, color: T.textMuted }}>
+          <span style={{ display: "inline-block", animation: "spin 1s linear infinite", fontSize: 20 }}>🔄</span>
+          <div style={{ marginTop: 6 }}>Načítám informace z atlasu…</div>
         </div>
       ) : error ? (
-        <div style={{ fontFamily:fs,fontSize:13,color:T.accent,padding:12 }}>{error}</div>
+        <div style={{ fontFamily: fs, fontSize: 13, color: T.accent, padding: "10px 0" }}>{error}</div>
       ) : (
-        <Btn small onClick={fetchInfo}>📚 Zobrazit info z AI atlasu</Btn>
+        <Btn small onClick={fetchInfo} style={{ width: "100%" }}>📚 Zobrazit info z AI atlasu</Btn>
       )}
     </div>
   );
@@ -385,31 +459,47 @@ function AddBirdModal({ onClose, onAdd }) {
 
   return (
     <div style={{
-      position:"fixed",inset:0,background:"rgba(0,0,0,.45)",zIndex:100,
-      display:"flex",alignItems:"center",justifyContent:"center",padding:20,
+      position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 150,
+      display: "flex", alignItems: "flex-end", justifyContent: "center",
     }} onClick={onClose}>
-      <div className="fade-up" onClick={e=>e.stopPropagation()} style={{
-        background:T.card,borderRadius:20,padding:28,maxWidth:420,width:"100%",
-        boxShadow:"0 20px 60px rgba(0,0,0,.2)",
+      <div className="fade-up" onClick={e => e.stopPropagation()} style={{
+        background: T.card, borderRadius: "20px 20px 0 0", padding: "24px 20px 32px",
+        width: "100%", maxWidth: 440, boxShadow: "0 -10px 40px rgba(0,0,0,.2)",
       }}>
-        <h3 style={{ fontFamily:ff,fontSize:22,fontWeight:700,color:T.text,marginBottom:18 }}>Přidat nový druh</h3>
-        <div style={{ marginBottom:14 }}>
+        <h3 style={{ fontFamily: ff, fontSize: 22, fontWeight: 700, color: T.text, marginBottom: 18 }}>Přidat nový druh</h3>
+        <div style={{ marginBottom: 14 }}>
           <Label>Název druhu *</Label>
-          <input value={name} onChange={e=>setName(e.target.value)} placeholder="Např. Orel skalní" autoFocus />
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Např. Orel skalní" autoFocus />
         </div>
-        <div style={{ marginBottom:20 }}>
+        <div style={{ marginBottom: 20 }}>
           <Label>Kategorie</Label>
-          <select value={category} onChange={e=>setCategory(e.target.value)}>
-            {Object.entries(CATEGORIES).map(([k,c])=><option key={k} value={k}>{c.icon} {c.name}</option>)}
+          <select value={category} onChange={e => setCategory(e.target.value)}>
+            {Object.entries(CATEGORIES).map(([k, c]) => <option key={k} value={k}>{c.icon} {c.name}</option>)}
           </select>
         </div>
-        <div style={{ display:"flex",gap:10 }}>
-          <Btn primary onClick={()=>{if(name.trim()){onAdd({id:uid(),name:name.trim(),category,custom:true});onClose()}}}
-            disabled={!name.trim()} style={{ flex:1 }}>✓ Přidat druh</Btn>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Btn primary onClick={() => { if (name.trim()) { onAdd({ id: uid(), name: name.trim(), category, custom: true }); onClose() } }}
+            disabled={!name.trim()} style={{ flex: 1 }}>✓ Přidat druh</Btn>
           <Btn onClick={onClose}>Zrušit</Btn>
         </div>
       </div>
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   TOAST notification
+   ═══════════════════════════════════════════════ */
+
+function Toast({ message, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, 2500); return () => clearTimeout(t); }, [onDone]);
+  return (
+    <div style={{
+      position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", zIndex: 300,
+      background: T.dark, color: T.white, fontFamily: fs, fontSize: 14, fontWeight: 600,
+      padding: "12px 24px", borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,.25)",
+      animation: "fadeUp .3s ease-out",
+    }}>{message}</div>
   );
 }
 
@@ -426,13 +516,13 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
 
   const sightingMap = useMemo(() => {
     const m = {};
-    sightings.forEach(s => { m[s.birdId] = (m[s.birdId]||0)+1; });
+    sightings.forEach(s => { m[s.birdId] = (m[s.birdId] || 0) + 1; });
     return m;
   }, [sightings]);
 
   const counts = useMemo(() => {
     const c = { all: birds.length };
-    birds.forEach(b => { c[b.category] = (c[b.category]||0)+1; });
+    birds.forEach(b => { c[b.category] = (c[b.category] || 0) + 1; });
     return c;
   }, [birds]);
 
@@ -447,45 +537,46 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
 
   const birdSightings = useMemo(() => {
     if (!selected) return [];
-    return sightings.filter(s => s.birdId === selected.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    return sightings.filter(s => s.birdId === selected.id).sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [selected, sightings]);
 
+  /* ─── Bird detail ─── */
   if (selected) {
     const cat = CATEGORIES[selected.category];
     return (
       <div className="fade-up">
-        <button onClick={()=>setSelected(null)} style={{
-          fontFamily:fs,fontSize:14,color:T.green,background:"none",border:"none",
-          cursor:"pointer",marginBottom:16,display:"flex",alignItems:"center",gap:6,
+        <button onClick={() => setSelected(null)} style={{
+          fontFamily: fs, fontSize: 14, color: T.green, background: "none", border: "none",
+          cursor: "pointer", marginBottom: 14, display: "flex", alignItems: "center", gap: 6, padding: "8px 0",
         }}>← Zpět na atlas</button>
         <div style={{
-          background:`linear-gradient(135deg,${cat.color}12,${cat.color}06)`,
-          borderRadius:20,padding:"30px 26px",border:`1.5px solid ${cat.color}30`,marginBottom:8,
+          background: `linear-gradient(135deg,${cat.color}12,${cat.color}06)`,
+          borderRadius: 18, padding: "24px 20px", border: `1.5px solid ${cat.color}30`, marginBottom: 8,
         }}>
-          <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:6,flexWrap:"wrap" }}>
-            <span style={{ fontSize:48 }}>{cat.icon}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 44 }}>{cat.icon}</span>
             {selected.custom && <span style={{
-              fontFamily:fs,fontSize:10,fontWeight:700,color:T.amber,background:T.amberSoft,
-              padding:"2px 8px",borderRadius:8,
+              fontFamily: fs, fontSize: 10, fontWeight: 700, color: T.amber, background: T.amberSoft,
+              padding: "2px 8px", borderRadius: 8,
             }}>VLASTNÍ DRUH</span>}
           </div>
-          <h2 style={{ fontFamily:ff,fontSize:30,fontWeight:700,color:T.text,marginBottom:6 }}>{selected.name}</h2>
+          <h2 style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: T.text, marginBottom: 6 }}>{selected.name}</h2>
           <span style={{
-            fontFamily:fs,fontSize:12,color:cat.color,fontWeight:600,
-            background:cat.color+"18",padding:"4px 12px",borderRadius:12,
+            fontFamily: fs, fontSize: 12, color: cat.color, fontWeight: 600,
+            background: cat.color + "18", padding: "4px 12px", borderRadius: 12,
           }}>{cat.name}</span>
-          <div style={{ marginTop:16,display:"flex",gap:24,flexWrap:"wrap" }}>
+          <div style={{ marginTop: 16, display: "flex", gap: 20, flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontFamily:ff,fontSize:28,fontWeight:700,color:T.text }}>{sightingMap[selected.id]||0}</div>
-              <div style={{ fontFamily:fs,fontSize:13,color:T.textMuted }}>pozorování</div>
+              <div style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: T.text }}>{sightingMap[selected.id] || 0}</div>
+              <div style={{ fontFamily: fs, fontSize: 13, color: T.textMuted }}>pozorování</div>
             </div>
-            {birdSightings.length>0 && <div>
-              <div style={{ fontFamily:ff,fontSize:18,fontWeight:700,color:T.text }}>{fmtDate(birdSightings[0].date)}</div>
-              <div style={{ fontFamily:fs,fontSize:13,color:T.textMuted }}>poslední</div>
+            {birdSightings.length > 0 && <div>
+              <div style={{ fontFamily: fs, fontSize: 16, fontWeight: 700, color: T.text }}>{fmtDate(birdSightings[0].date)}</div>
+              <div style={{ fontFamily: fs, fontSize: 13, color: T.textMuted }}>poslední</div>
             </div>}
           </div>
-          <div style={{ marginTop:16 }}>
-            <Btn primary onClick={()=>onAddSighting(selected)}>+ Zaznamenat pozorování</Btn>
+          <div style={{ marginTop: 16 }}>
+            <Btn primary onClick={() => onAddSighting(selected)} style={{ width: "100%" }}>+ Zaznamenat pozorování</Btn>
           </div>
         </div>
 
@@ -493,17 +584,17 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
 
         {birdSightings.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <h3 style={{ fontFamily:ff,fontSize:20,fontWeight:600,color:T.text,marginBottom:12 }}>Historie pozorování</h3>
+            <h3 style={{ fontFamily: ff, fontSize: 19, fontWeight: 600, color: T.text, marginBottom: 12 }}>Historie pozorování</h3>
             {birdSightings.map(s => (
               <div key={s.id} style={{
-                background:T.card,borderRadius:12,padding:"14px 18px",border:`1px solid ${T.border}`,marginBottom:8,
+                background: T.card, borderRadius: 12, padding: "12px 16px", border: `1px solid ${T.border}`, marginBottom: 8,
               }}>
-                <div style={{ fontFamily:fs,fontWeight:600,fontSize:14,color:T.text }}>📍 {s.location||"Neznámé místo"}</div>
-                <div style={{ fontFamily:fs,fontSize:13,color:T.textMuted,marginTop:2 }}>
-                  {fmtDate(s.date)} {s.observer?`· 👤 ${s.observer}`:""}
-                  {s.lat?` · 🌐 ${Number(s.lat).toFixed(4)}, ${Number(s.lng).toFixed(4)}`:""}
+                <div style={{ fontFamily: fs, fontWeight: 600, fontSize: 14, color: T.text }}>📍 {s.location || "Neznámé místo"}</div>
+                <div style={{ fontFamily: fs, fontSize: 12, color: T.textMuted, marginTop: 2 }}>
+                  {fmtDate(s.date)} {s.observer ? `· 👤 ${s.observer}` : ""}
+                  {s.lat ? ` · 🌐 ${Number(s.lat).toFixed(4)}, ${Number(s.lng).toFixed(4)}` : ""}
                 </div>
-                {s.notes && <div style={{ fontFamily:fs,fontSize:13,color:T.brownMid,marginTop:6,fontStyle:"italic" }}>„{s.notes}"</div>}
+                {s.notes && <div style={{ fontFamily: fs, fontSize: 12, color: T.brownMid, marginTop: 5, fontStyle: "italic" }}>„{s.notes}"</div>}
               </div>
             ))}
           </div>
@@ -512,52 +603,53 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
     );
   }
 
+  /* ─── Atlas grid ─── */
   return (
     <div className="fade-up">
-      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <h2 style={{ fontFamily:ff,fontSize:28,fontWeight:700,color:T.text,marginBottom:2 }}>Atlas ptáků</h2>
-          <p style={{ fontFamily:fs,fontSize:14,color:T.textMuted }}>
-            {birds.length} druhů · {Object.keys(sightingMap).length} spatřeno ({birds.length>0?Math.round(Object.keys(sightingMap).length/birds.length*100):0} %)
+          <h2 style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: T.text, marginBottom: 2 }}>Atlas ptáků</h2>
+          <p style={{ fontFamily: fs, fontSize: 14, color: T.textMuted }}>
+            {birds.length} druhů · {Object.keys(sightingMap).length} spatřeno ({birds.length > 0 ? Math.round(Object.keys(sightingMap).length / birds.length * 100) : 0} %)
           </p>
         </div>
-        <Btn small onClick={()=>setShowAddBird(true)}>+ Nový druh</Btn>
+        <Btn small onClick={() => setShowAddBird(true)}>+ Nový druh</Btn>
       </div>
 
-      <div style={{ display:"flex",flexDirection:"column",gap:12,marginBottom:18 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
         <Search value={search} onChange={setSearch} placeholder="Hledat ptáka…" />
         <CatPills selected={catFilter} onChange={setCatFilter} counts={counts} />
-        <label style={{ fontFamily:fs,fontSize:13,color:T.textMuted,display:"flex",alignItems:"center",gap:6,cursor:"pointer",userSelect:"none" }}>
-          <input type="checkbox" checked={showOnlySeen} onChange={e=>setShowOnlySeen(e.target.checked)}
-            style={{ width:"auto",accentColor:T.green }} /> Zobrazit jen spatřené druhy
+        <label style={{ fontFamily: fs, fontSize: 13, color: T.textMuted, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
+          <input type="checkbox" checked={showOnlySeen} onChange={e => setShowOnlySeen(e.target.checked)}
+            style={{ width: "auto", accentColor: T.green }} /> Jen spatřené
         </label>
       </div>
 
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(165px,1fr))",gap:10 }}>
+      <div className="bird-grid">
         {filtered.map(b => {
           const cat = CATEGORIES[b.category];
           const seen = !!sightingMap[b.id];
           return (
-            <div key={b.id} onClick={()=>setSelected(b)} style={{
-              background:T.card,borderRadius:14,padding:"16px 14px",cursor:"pointer",
-              border:`1.5px solid ${seen?cat.color+"55":T.border}`,position:"relative",overflow:"hidden",
-              transition:"transform .2s,box-shadow .2s",
+            <div key={b.id} onClick={() => setSelected(b)} style={{
+              background: T.card, borderRadius: 14, padding: "14px 12px", cursor: "pointer",
+              border: `1.5px solid ${seen ? cat.color + "55" : T.border}`, position: "relative", overflow: "hidden",
+              transition: "transform .15s,box-shadow .15s", WebkitTapHighlightColor: "transparent",
             }}
-            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 8px 20px rgba(0,0,0,.08)"}}
-            onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=""}}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,.07)" }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "" }}
             >
               {seen && <div style={{
-                position:"absolute",top:8,right:8,background:T.green,color:T.white,
-                borderRadius:16,fontSize:11,fontFamily:fs,fontWeight:600,padding:"2px 8px",
+                position: "absolute", top: 7, right: 7, background: T.green, color: T.white,
+                borderRadius: 14, fontSize: 10, fontFamily: fs, fontWeight: 600, padding: "2px 7px",
               }}>✓ {sightingMap[b.id]}×</div>}
               {b.custom && <div style={{
-                position:"absolute",top:8,left:8,background:T.amber,color:T.white,
-                borderRadius:6,fontSize:9,fontFamily:fs,fontWeight:700,padding:"1px 6px",letterSpacing:".5px",
+                position: "absolute", top: 7, left: 7, background: T.amber, color: T.white,
+                borderRadius: 5, fontSize: 8, fontFamily: fs, fontWeight: 700, padding: "1px 5px",
               }}>VLASTNÍ</div>}
-              <div style={{ fontSize:28,marginBottom:6,filter:seen?"none":"grayscale(.5) opacity(.55)" }}>{cat.icon}</div>
-              <div style={{ fontFamily:ff,fontSize:15,fontWeight:600,color:T.text,lineHeight:1.25,marginBottom:3 }}>{b.name}</div>
-              <div style={{ fontFamily:fs,fontSize:11,color:cat.color,fontWeight:600,display:"flex",alignItems:"center",gap:4 }}>
-                <span style={{ width:7,height:7,borderRadius:"50%",background:cat.color,display:"inline-block" }}/>
+              <div style={{ fontSize: 26, marginBottom: 5, filter: seen ? "none" : "grayscale(.5) opacity(.5)" }}>{cat.icon}</div>
+              <div style={{ fontFamily: ff, fontSize: 14, fontWeight: 600, color: T.text, lineHeight: 1.2, marginBottom: 3 }}>{b.name}</div>
+              <div style={{ fontFamily: fs, fontSize: 10, color: cat.color, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: cat.color, display: "inline-block" }} />
                 {cat.name}
               </div>
             </div>
@@ -565,11 +657,11 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
         })}
       </div>
 
-      {filtered.length===0 && (
-        <div style={{ textAlign:"center",padding:48,fontFamily:fs,color:T.textMuted }}>Žádný pták neodpovídá hledání</div>
+      {filtered.length === 0 && (
+        <div style={{ textAlign: "center", padding: 40, fontFamily: fs, color: T.textMuted }}>Žádný pták neodpovídá hledání</div>
       )}
 
-      {showAddBird && <AddBirdModal onClose={()=>setShowAddBird(false)} onAdd={onAddBird} />}
+      {showAddBird && <AddBirdModal onClose={() => setShowAddBird(false)} onAdd={onAddBird} />}
     </div>
   );
 }
@@ -579,14 +671,14 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
    ═══════════════════════════════════════════════ */
 
 function AddPage({ birds, onSave, onCancel, preselected }) {
-  const [birdId, setBirdId] = useState(preselected?.id||"");
-  const [birdSearch, setBirdSearch] = useState(preselected?.name||"");
+  const [birdId, setBirdId] = useState(preselected?.id || "");
+  const [birdSearch, setBirdSearch] = useState(preselected?.name || "");
   const [showDrop, setShowDrop] = useState(false);
-  const [date, setDate] = useState(new Date().toISOString().slice(0,10));
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [location, setLocation] = useState("");
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
-  const [observer, setObserver] = useState("");
+  const [observer, setObserver] = useState(() => STORE.get("ptaci-last-observer") || "");
   const [notes, setNotes] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
@@ -601,16 +693,17 @@ function AddPage({ birds, onSave, onCancel, preselected }) {
   useEffect(() => {
     const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setShowDrop(false); };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("touchstart", handler); };
   }, []);
 
   const handleGeo = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) { alert("Geolokace není podporována."); return; }
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       p => { setLat(p.coords.latitude.toFixed(6)); setLng(p.coords.longitude.toFixed(6)); setGeoLoading(false); },
-      () => { setGeoLoading(false); alert("Nepodařilo se zjistit polohu. Zkontrolujte oprávnění."); },
-      { enableHighAccuracy: true, timeout: 10000 }
+      (err) => { setGeoLoading(false); alert("Nepodařilo se zjistit polohu. Povolte přístup k poloze v nastavení."); },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -618,9 +711,10 @@ function AddPage({ birds, onSave, onCancel, preselected }) {
     if (!birdId || !date) return;
     const bird = birds.find(b => b.id === birdId);
     if (!bird) return;
+    STORE.set("ptaci-last-observer", observer);
     onSave({
       id: uid(), birdId: bird.id, birdName: bird.name, birdCategory: bird.category,
-      date, location, lat: lat?Number(lat):null, lng: lng?Number(lng):null,
+      date, location, lat: lat ? Number(lat) : null, lng: lng ? Number(lng) : null,
       observer, notes, createdAt: new Date().toISOString(),
     });
   };
@@ -628,43 +722,44 @@ function AddPage({ birds, onSave, onCancel, preselected }) {
   const selectBird = b => { setBirdId(b.id); setBirdSearch(b.name); setShowDrop(false); };
 
   return (
-    <div className="fade-up" style={{ maxWidth:540 }}>
-      <h2 style={{ fontFamily:ff,fontSize:28,fontWeight:700,color:T.text,marginBottom:18 }}>Nové pozorování</h2>
-      <div style={{ background:T.card,borderRadius:18,padding:24,border:`1.5px solid ${T.border}`,display:"flex",flexDirection:"column",gap:16 }}>
+    <div className="fade-up" style={{ maxWidth: 540 }}>
+      <h2 style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: T.text, marginBottom: 16 }}>Nové pozorování</h2>
+      <div style={{ background: T.card, borderRadius: 18, padding: "20px 16px", border: `1.5px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 14 }}>
 
         {/* Bird autocomplete */}
-        <div ref={dropRef} style={{ position:"relative" }}>
+        <div ref={dropRef} style={{ position: "relative" }}>
           <Label>Druh ptáka *</Label>
-          <input value={birdSearch}
-            onChange={e=>{setBirdSearch(e.target.value);setBirdId("");setShowDrop(true)}}
-            onFocus={()=>setShowDrop(true)}
-            placeholder="Začněte psát název ptáka…"
-            style={{ borderColor:birdId?T.green:undefined }}
-          />
-          {birdId && <span style={{ position:"absolute",right:12,top:32,fontSize:16 }}>✅</span>}
+          <div style={{ position: "relative" }}>
+            <input value={birdSearch}
+              onChange={e => { setBirdSearch(e.target.value); setBirdId(""); setShowDrop(true) }}
+              onFocus={() => setShowDrop(true)}
+              placeholder="Začněte psát název ptáka…"
+              style={{ borderColor: birdId ? T.green : undefined, paddingRight: 40 }}
+            />
+            {birdId && <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18 }}>✅</span>}
+          </div>
           {showDrop && (
             <div style={{
-              position:"absolute",top:"100%",left:0,right:0,zIndex:50,
-              background:T.white,border:`1.5px solid ${T.border}`,borderRadius:10,
-              maxHeight:260,overflowY:"auto",marginTop:4,boxShadow:"0 8px 24px rgba(0,0,0,.12)",
+              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+              background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 10,
+              maxHeight: 220, overflowY: "auto", marginTop: 4, boxShadow: "0 8px 24px rgba(0,0,0,.12)",
+              WebkitOverflowScrolling: "touch",
             }}>
-              {filteredBirds.slice(0,30).map(b => (
-                <div key={b.id} onClick={()=>selectBird(b)} style={{
-                  padding:"10px 14px",cursor:"pointer",fontFamily:fs,fontSize:14,
-                  display:"flex",alignItems:"center",gap:8,
-                  background:birdId===b.id?T.greenSoft:"transparent",
-                  borderBottom:`1px solid ${T.border}15`,
-                }}
-                onMouseEnter={e=>e.currentTarget.style.background=T.greenSoft}
-                onMouseLeave={e=>e.currentTarget.style.background=birdId===b.id?T.greenSoft:"transparent"}
-                >
+              {filteredBirds.slice(0, 30).map(b => (
+                <div key={b.id} onClick={() => selectBird(b)} style={{
+                  padding: "12px 14px", cursor: "pointer", fontFamily: fs, fontSize: 15,
+                  display: "flex", alignItems: "center", gap: 8,
+                  background: birdId === b.id ? T.greenSoft : "transparent",
+                  borderBottom: `1px solid ${T.border}22`,
+                  WebkitTapHighlightColor: "transparent",
+                }}>
                   {CATEGORIES[b.category]?.icon} {b.name}
-                  {b.custom && <span style={{ fontSize:10,color:T.amber,fontWeight:700,marginLeft:4 }}>(vlastní)</span>}
+                  {b.custom && <span style={{ fontSize: 10, color: T.amber, fontWeight: 700 }}>(vlastní)</span>}
                 </div>
               ))}
-              {filteredBirds.length===0 && (
-                <div style={{ padding:14,fontFamily:fs,fontSize:13,color:T.textMuted }}>
-                  Druh nenalezen — přidejte jej v Atlasu → „+ Nový druh"
+              {filteredBirds.length === 0 && (
+                <div style={{ padding: 14, fontFamily: fs, fontSize: 13, color: T.textMuted }}>
+                  Druh nenalezen — přidejte v Atlasu → „+ Nový druh"
                 </div>
               )}
             </div>
@@ -673,55 +768,64 @@ function AddPage({ birds, onSave, onCancel, preselected }) {
 
         <div>
           <Label>Datum *</Label>
-          <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
         </div>
 
         <div>
           <Label>Místo pozorování</Label>
-          <input value={location} onChange={e=>setLocation(e.target.value)} placeholder="Např. Rybník Velký Dářko, Vysočina" />
+          <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Např. Rybník u Lipnice" />
         </div>
 
         {/* GPS */}
         <div>
-          <Label>GPS souřadnice</Label>
-          <div style={{ display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" }}>
-            <input value={lat} onChange={e=>setLat(e.target.value)} placeholder="Šířka (lat)" style={{ flex:"1 1 90px" }} />
-            <input value={lng} onChange={e=>setLng(e.target.value)} placeholder="Délka (lng)" style={{ flex:"1 1 90px" }} />
-          </div>
-          <div style={{ display:"flex",gap:8,marginTop:8 }}>
-            <Btn small onClick={handleGeo}>
-              {geoLoading?"⏳ Zjišťuji…":"📍 Moje poloha"}
+          <Label>Poloha GPS</Label>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <Btn small onClick={handleGeo} style={{ flex: 1 }}>
+              {geoLoading ? "⏳ Zjišťuji…" : "📍 Moje poloha"}
             </Btn>
-            <Btn small onClick={()=>setShowMapPicker(true)}>🗺️ Vybrat na mapě</Btn>
+            <Btn small onClick={() => setShowMapPicker(true)} style={{ flex: 1 }}>
+              🗺️ Vybrat na mapě
+            </Btn>
           </div>
-          {lat && lng && (
-            <p style={{ fontFamily:fs,fontSize:12,color:T.green,marginTop:6,fontWeight:500 }}>
-              ✅ Souřadnice: {lat}, {lng}
+          {(lat && lng) ? (
+            <div style={{
+              background: T.greenSoft, borderRadius: 10, padding: "10px 14px",
+              fontFamily: fs, fontSize: 13, color: T.greenText, fontWeight: 500,
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <span>✅ {lat}, {lng}</span>
+              <button onClick={() => { setLat(""); setLng(""); }} style={{
+                background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.textMuted,
+              }}>✕</button>
+            </div>
+          ) : (
+            <p style={{ fontFamily: fs, fontSize: 12, color: T.textMuted }}>
+              Klikněte na tlačítko pro zjištění polohy z telefonu nebo vyberte na mapě
             </p>
           )}
         </div>
 
         <div>
           <Label>Pozorovatel</Label>
-          <input value={observer} onChange={e=>setObserver(e.target.value)} placeholder="Vaše jméno" />
+          <input value={observer} onChange={e => setObserver(e.target.value)} placeholder="Vaše jméno" />
         </div>
 
         <div>
           <Label>Poznámky</Label>
-          <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Počasí, chování ptáka, prostředí…" />
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Počasí, chování ptáka…" />
         </div>
 
-        <div style={{ display:"flex",gap:10,marginTop:4 }}>
-          <Btn primary onClick={handleSave} disabled={!birdId||!date} style={{ flex:1 }}>💾 Uložit pozorování</Btn>
-          <Btn onClick={onCancel}>Zrušit</Btn>
-        </div>
+        <Btn primary onClick={handleSave} disabled={!birdId || !date} style={{ width: "100%", marginTop: 4 }}>
+          💾 Uložit pozorování
+        </Btn>
+        <Btn onClick={onCancel} style={{ width: "100%" }}>Zrušit</Btn>
       </div>
 
       {showMapPicker && (
         <MapPicker
           lat={lat ? Number(lat) : null}
           lng={lng ? Number(lng) : null}
-          onSelect={(newLat, newLng) => { setLat(newLat); setLng(newLng); }}
+          onSelect={(nLat, nLng) => { setLat(nLat); setLng(nLng); }}
           onClose={() => setShowMapPicker(false)}
         />
       )}
@@ -730,7 +834,7 @@ function AddPage({ birds, onSave, onCancel, preselected }) {
 }
 
 /* ═══════════════════════════════════════════════
-   PAGE: SIGHTINGS
+   PAGE: SIGHTINGS LIST
    ═══════════════════════════════════════════════ */
 
 function ListPage({ sightings, onDelete }) {
@@ -740,7 +844,7 @@ function ListPage({ sightings, onDelete }) {
 
   const counts = useMemo(() => {
     const c = { all: sightings.length };
-    sightings.forEach(s => { c[s.birdCategory]=(c[s.birdCategory]||0)+1; });
+    sightings.forEach(s => { c[s.birdCategory] = (c[s.birdCategory] || 0) + 1; });
     return c;
   }, [sightings]);
 
@@ -748,74 +852,74 @@ function ListPage({ sightings, onDelete }) {
     let list = [...sightings];
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(s => s.birdName.toLowerCase().includes(q) || (s.location||"").toLowerCase().includes(q) || (s.observer||"").toLowerCase().includes(q));
+      list = list.filter(s => s.birdName.toLowerCase().includes(q) || (s.location || "").toLowerCase().includes(q) || (s.observer || "").toLowerCase().includes(q));
     }
-    if (catFilter) list = list.filter(s => s.birdCategory===catFilter);
-    list.sort((a,b) => {
-      if (sortBy==="date-desc") return new Date(b.date)-new Date(a.date);
-      if (sortBy==="date-asc") return new Date(a.date)-new Date(b.date);
-      return a.birdName.localeCompare(b.birdName,"cs");
+    if (catFilter) list = list.filter(s => s.birdCategory === catFilter);
+    list.sort((a, b) => {
+      if (sortBy === "date-desc") return new Date(b.date) - new Date(a.date);
+      if (sortBy === "date-asc") return new Date(a.date) - new Date(b.date);
+      return a.birdName.localeCompare(b.birdName, "cs");
     });
     return list;
-  }, [sightings,search,catFilter,sortBy]);
+  }, [sightings, search, catFilter, sortBy]);
 
   const exportCSV = () => {
     const h = "Pták;Kategorie;Datum;Místo;Šířka;Délka;Pozorovatel;Poznámky\n";
     const rows = sightings.map(s =>
-      [s.birdName,CATEGORIES[s.birdCategory]?.name,s.date,s.location,s.lat,s.lng,s.observer,s.notes]
-      .map(v=>`"${(v??"").toString().replace(/"/g,'""')}"`).join(";")
+      [s.birdName, CATEGORIES[s.birdCategory]?.name, s.date, s.location, s.lat, s.lng, s.observer, s.notes]
+        .map(v => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(";")
     ).join("\n");
-    const blob = new Blob(["\uFEFF"+h+rows],{type:"text/csv;charset=utf-8"});
-    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="ptaci_pozorovani.csv"; a.click();
+    const blob = new Blob(["\uFEFF" + h + rows], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ptaci_pozorovani.csv"; a.click();
   };
 
   return (
     <div className="fade-up">
-      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,flexWrap:"wrap",gap:10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
         <div>
-          <h2 style={{ fontFamily:ff,fontSize:28,fontWeight:700,color:T.text }}>Záznamy</h2>
-          <p style={{ fontFamily:fs,fontSize:14,color:T.textMuted }}>{sightings.length} pozorování</p>
+          <h2 style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: T.text }}>Záznamy</h2>
+          <p style={{ fontFamily: fs, fontSize: 14, color: T.textMuted }}>{sightings.length} pozorování</p>
         </div>
-        <Btn small onClick={exportCSV}>📥 Export CSV</Btn>
+        <Btn small onClick={exportCSV}>📥 CSV</Btn>
       </div>
-      <div style={{ display:"flex",gap:10,marginBottom:12,flexWrap:"wrap",alignItems:"center" }}>
-        <div style={{ flex:"1 1 200px" }}><Search value={search} onChange={setSearch} placeholder="Hledat v záznamech…" /></div>
-        <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{ width:"auto",borderRadius:10,padding:"8px 12px" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ flex: "1 1 180px" }}><Search value={search} onChange={setSearch} placeholder="Hledat…" /></div>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ width: "auto", borderRadius: 10, padding: "10px 12px" }}>
           <option value="date-desc">Nejnovější</option>
           <option value="date-asc">Nejstarší</option>
           <option value="name">Podle názvu</option>
         </select>
       </div>
       <CatPills selected={catFilter} onChange={setCatFilter} counts={counts} />
-      <div style={{ marginTop:14 }}>
-        {filtered.length===0 && (
-          <div style={{ textAlign:"center",padding:48,fontFamily:fs,color:T.textMuted }}>
-            {sightings.length===0?"Zatím žádná pozorování. Začněte v Atlasu!":"Žádné záznamy neodpovídají filtru"}
+      <div style={{ marginTop: 12 }}>
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: 40, fontFamily: fs, color: T.textMuted }}>
+            {sightings.length === 0 ? "Zatím žádná pozorování." : "Žádné záznamy neodpovídají filtru"}
           </div>
         )}
         {filtered.map(s => {
           const cat = CATEGORIES[s.birdCategory];
           return (
             <div key={s.id} style={{
-              background:T.card,borderRadius:14,padding:"14px 18px",border:`1px solid ${T.border}`,
-              marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,
+              background: T.card, borderRadius: 14, padding: "12px 14px", border: `1px solid ${T.border}`,
+              marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
             }}>
-              <div style={{ flex:1,minWidth:0 }}>
-                <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:3 }}>
-                  <span style={{ fontSize:18 }}>{cat?.icon}</span>
-                  <span style={{ fontFamily:ff,fontSize:16,fontWeight:600,color:T.text }}>{s.birdName}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 2 }}>
+                  <span style={{ fontSize: 16 }}>{cat?.icon}</span>
+                  <span style={{ fontFamily: ff, fontSize: 15, fontWeight: 600, color: T.text }}>{s.birdName}</span>
                 </div>
-                <div style={{ fontFamily:fs,fontSize:12,color:T.textMuted,display:"flex",gap:10,flexWrap:"wrap" }}>
+                <div style={{ fontFamily: fs, fontSize: 12, color: T.textMuted, display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <span>📅 {fmtDate(s.date)}</span>
                   {s.location && <span>📍 {s.location}</span>}
                   {s.observer && <span>👤 {s.observer}</span>}
-                  {s.lat && <span>🌐 {Number(s.lat).toFixed(4)},{Number(s.lng).toFixed(4)}</span>}
+                  {s.lat && <span>🌐 {Number(s.lat).toFixed(3)},{Number(s.lng).toFixed(3)}</span>}
                 </div>
-                {s.notes && <div style={{ fontFamily:fs,fontSize:12,color:T.brownMid,marginTop:5,fontStyle:"italic" }}>„{s.notes}"</div>}
+                {s.notes && <div style={{ fontFamily: fs, fontSize: 12, color: T.brownMid, marginTop: 4, fontStyle: "italic" }}>„{s.notes}"</div>}
               </div>
-              <button onClick={()=>onDelete(s.id)} style={{
-                background:"none",border:"none",cursor:"pointer",fontSize:16,color:T.textMuted,opacity:.4,flexShrink:0,
-              }} title="Smazat">🗑️</button>
+              <button onClick={() => onDelete(s.id)} style={{
+                background: "none", border: "none", cursor: "pointer", fontSize: 16, color: T.textMuted, opacity: .4, padding: 6,
+              }}>🗑️</button>
             </div>
           );
         })}
@@ -830,89 +934,89 @@ function ListPage({ sightings, onDelete }) {
 
 function StatsPage({ sightings, totalBirds }) {
   const stats = useMemo(() => {
-    const unique = new Set(sightings.map(s=>s.birdId));
-    const catCounts={}, birdCounts={}, monthCounts={}, observerCounts={};
+    const unique = new Set(sightings.map(s => s.birdId));
+    const catCounts = {}, birdCounts = {}, monthCounts = {}, observerCounts = {};
     sightings.forEach(s => {
-      catCounts[s.birdCategory]=(catCounts[s.birdCategory]||0)+1;
-      birdCounts[s.birdName]=(birdCounts[s.birdName]||0)+1;
-      monthCounts[new Date(s.date).getMonth()]=(monthCounts[new Date(s.date).getMonth()]||0)+1;
-      if (s.observer) observerCounts[s.observer]=(observerCounts[s.observer]||0)+1;
+      catCounts[s.birdCategory] = (catCounts[s.birdCategory] || 0) + 1;
+      birdCounts[s.birdName] = (birdCounts[s.birdName] || 0) + 1;
+      monthCounts[new Date(s.date).getMonth()] = (monthCounts[new Date(s.date).getMonth()] || 0) + 1;
+      if (s.observer) observerCounts[s.observer] = (observerCounts[s.observer] || 0) + 1;
     });
     return {
-      total:sightings.length, unique:unique.size,
-      pct:totalBirds>0?Math.round(unique.size/totalBirds*100):0,
-      locs:new Set(sightings.map(s=>s.location).filter(Boolean)).size,
-      topBirds:Object.entries(birdCounts).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([n,c])=>({name:n.length>16?n.slice(0,16)+"…":n,count:c})),
-      catData:Object.entries(catCounts).map(([k,v])=>({name:CATEGORIES[k]?.name||k,value:v,color:CATEGORIES[k]?.color||"#999"})),
-      monthData:Array.from({length:12},(_,i)=>({name:monthName(i),count:monthCounts[i]||0})),
-      topObs:Object.entries(observerCounts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>({name:n,count:c})),
+      total: sightings.length, unique: unique.size,
+      pct: totalBirds > 0 ? Math.round(unique.size / totalBirds * 100) : 0,
+      locs: new Set(sightings.map(s => s.location).filter(Boolean)).size,
+      topBirds: Object.entries(birdCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, c]) => ({ name: n.length > 14 ? n.slice(0, 14) + "…" : n, count: c })),
+      catData: Object.entries(catCounts).map(([k, v]) => ({ name: CATEGORIES[k]?.name || k, value: v, color: CATEGORIES[k]?.color || "#999" })),
+      monthData: Array.from({ length: 12 }, (_, i) => ({ name: monthName(i), count: monthCounts[i] || 0 })),
+      topObs: Object.entries(observerCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([n, c]) => ({ name: n, count: c })),
     };
   }, [sightings, totalBirds]);
 
   if (!sightings.length) return (
-    <div className="fade-up" style={{ textAlign:"center",padding:64 }}>
-      <div style={{ fontSize:52,marginBottom:12 }}>📊</div>
-      <h2 style={{ fontFamily:ff,fontSize:24,color:T.text,marginBottom:8 }}>Zatím žádná data</h2>
-      <p style={{ fontFamily:fs,color:T.textMuted }}>Přidejte pozorování a statistiky se zobrazí.</p>
+    <div className="fade-up" style={{ textAlign: "center", padding: 48 }}>
+      <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+      <h2 style={{ fontFamily: ff, fontSize: 22, color: T.text, marginBottom: 8 }}>Zatím žádná data</h2>
+      <p style={{ fontFamily: fs, color: T.textMuted }}>Přidejte pozorování a statistiky se zobrazí.</p>
     </div>
   );
 
   return (
     <div className="fade-up">
-      <h2 style={{ fontFamily:ff,fontSize:28,fontWeight:700,color:T.text,marginBottom:18 }}>Statistiky</h2>
-      <div style={{ display:"flex",gap:12,flexWrap:"wrap",marginBottom:24 }}>
-        <Stat icon="🐦" value={stats.unique} sub={`z ${totalBirds} druhů (${stats.pct} %)`} color={T.green} />
-        <Stat icon="👁️" value={stats.total} sub="pozorování celkem" color={T.amber} />
-        <Stat icon="📍" value={stats.locs} sub="různých míst" color={T.brownMid} />
+      <h2 style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: T.text, marginBottom: 16 }}>Statistiky</h2>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+        <Stat icon="🐦" value={stats.unique} sub={`z ${totalBirds} (${stats.pct} %)`} color={T.green} />
+        <Stat icon="👁️" value={stats.total} sub="celkem" color={T.amber} />
+        <Stat icon="📍" value={stats.locs} sub="míst" color={T.brownMid} />
       </div>
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:18 }}>
-        <div style={{ background:T.card,borderRadius:16,padding:20,border:`1px solid ${T.border}` }}>
-          <h3 style={{ fontFamily:ff,fontSize:17,fontWeight:600,marginBottom:14,color:T.text }}>Nejčastější druhy</h3>
-          <ResponsiveContainer width="100%" height={230}>
-            <BarChart data={stats.topBirds} layout="vertical" margin={{left:4,right:12}}>
-              <XAxis type="number" allowDecimals={false} tick={{fontFamily:fs,fontSize:11}} />
-              <YAxis type="category" dataKey="name" width={115} tick={{fontFamily:fs,fontSize:11}} />
-              <Tooltip contentStyle={{fontFamily:fs,borderRadius:8}} />
-              <Bar dataKey="count" fill={T.green} radius={[0,5,5,0]} name="Počet" />
+      <div className="stats-grid">
+        <div style={{ background: T.card, borderRadius: 16, padding: "18px 14px", border: `1px solid ${T.border}` }}>
+          <h3 style={{ fontFamily: ff, fontSize: 16, fontWeight: 600, marginBottom: 12, color: T.text }}>Nejčastější druhy</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={stats.topBirds} layout="vertical" margin={{ left: 0, right: 8 }}>
+              <XAxis type="number" allowDecimals={false} tick={{ fontFamily: fs, fontSize: 10 }} />
+              <YAxis type="category" dataKey="name" width={100} tick={{ fontFamily: fs, fontSize: 10 }} />
+              <Tooltip contentStyle={{ fontFamily: fs, borderRadius: 8 }} />
+              <Bar dataKey="count" fill={T.green} radius={[0, 5, 5, 0]} name="Počet" />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div style={{ background:T.card,borderRadius:16,padding:20,border:`1px solid ${T.border}` }}>
-          <h3 style={{ fontFamily:ff,fontSize:17,fontWeight:600,marginBottom:14,color:T.text }}>Podle kategorií</h3>
-          <ResponsiveContainer width="100%" height={230}>
+        <div style={{ background: T.card, borderRadius: 16, padding: "18px 14px", border: `1px solid ${T.border}` }}>
+          <h3 style={{ fontFamily: ff, fontSize: 16, fontWeight: 600, marginBottom: 12, color: T.text }}>Podle kategorií</h3>
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={stats.catData} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                outerRadius={80} innerRadius={42} paddingAngle={3}
-                label={({name,percent})=>`${name} ${(percent*100).toFixed(0)}%`}
-                style={{fontFamily:fs,fontSize:11}}>
-                {stats.catData.map((e,i)=><Cell key={i} fill={e.color}/>)}
+                outerRadius={70} innerRadius={36} paddingAngle={3}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                style={{ fontFamily: fs, fontSize: 10 }}>
+                {stats.catData.map((e, i) => <Cell key={i} fill={e.color} />)}
               </Pie>
-              <Tooltip contentStyle={{fontFamily:fs,borderRadius:8}} />
+              <Tooltip contentStyle={{ fontFamily: fs, borderRadius: 8 }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div style={{ background:T.card,borderRadius:16,padding:20,border:`1px solid ${T.border}`,gridColumn:"1/-1" }}>
-          <h3 style={{ fontFamily:ff,fontSize:17,fontWeight:600,marginBottom:14,color:T.text }}>Pozorování v průběhu roku</h3>
-          <ResponsiveContainer width="100%" height={180}>
+        <div style={{ background: T.card, borderRadius: 16, padding: "18px 14px", border: `1px solid ${T.border}`, gridColumn: "1/-1" }}>
+          <h3 style={{ fontFamily: ff, fontSize: 16, fontWeight: 600, marginBottom: 12, color: T.text }}>Během roku</h3>
+          <ResponsiveContainer width="100%" height={160}>
             <BarChart data={stats.monthData}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
-              <XAxis dataKey="name" tick={{fontFamily:fs,fontSize:11}} />
-              <YAxis allowDecimals={false} tick={{fontFamily:fs,fontSize:11}} />
-              <Tooltip contentStyle={{fontFamily:fs,borderRadius:8}} />
-              <Bar dataKey="count" fill={T.amber} radius={[4,4,0,0]} name="Pozorování" />
+              <XAxis dataKey="name" tick={{ fontFamily: fs, fontSize: 10 }} />
+              <YAxis allowDecimals={false} tick={{ fontFamily: fs, fontSize: 10 }} />
+              <Tooltip contentStyle={{ fontFamily: fs, borderRadius: 8 }} />
+              <Bar dataKey="count" fill={T.amber} radius={[4, 4, 0, 0]} name="Pozorování" />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        {stats.topObs.length>1 && (
-          <div style={{ background:T.card,borderRadius:16,padding:20,border:`1px solid ${T.border}` }}>
-            <h3 style={{ fontFamily:ff,fontSize:17,fontWeight:600,marginBottom:14,color:T.text }}>Žebříček pozorovatelů</h3>
-            {stats.topObs.map((o,i)=>(
+        {stats.topObs.length > 1 && (
+          <div style={{ background: T.card, borderRadius: 16, padding: "18px 14px", border: `1px solid ${T.border}` }}>
+            <h3 style={{ fontFamily: ff, fontSize: 16, fontWeight: 600, marginBottom: 12, color: T.text }}>Pozorovatelé</h3>
+            {stats.topObs.map((o, i) => (
               <div key={o.name} style={{
-                display:"flex",justifyContent:"space-between",alignItems:"center",
-                padding:"10px 0",borderBottom:i<stats.topObs.length-1?`1px solid ${T.border}`:"none",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "9px 0", borderBottom: i < stats.topObs.length - 1 ? `1px solid ${T.border}` : "none",
               }}>
-                <span style={{ fontFamily:fs,fontSize:14,color:T.text }}>{["🥇","🥈","🥉"][i]||"  "} {o.name}</span>
-                <span style={{ fontFamily:ff,fontSize:18,fontWeight:700,color:T.green }}>{o.count}</span>
+                <span style={{ fontFamily: fs, fontSize: 14, color: T.text }}>{["🥇", "🥈", "🥉"][i] || "  "} {o.name}</span>
+                <span style={{ fontFamily: ff, fontSize: 18, fontWeight: 700, color: T.green }}>{o.count}</span>
               </div>
             ))}
           </div>
@@ -927,11 +1031,11 @@ function StatsPage({ sightings, totalBirds }) {
    ═══════════════════════════════════════════════ */
 
 const TABS = [
-  { id:"atlas", label:"Atlas", icon:"📖" },
-  { id:"add", label:"Nový záznam", icon:"➕" },
-  { id:"sightings", label:"Záznamy", icon:"📋" },
-  { id:"map", label:"Mapa", icon:"🗺️" },
-  { id:"stats", label:"Statistiky", icon:"📊" },
+  { id: "atlas",      label: "Atlas",    icon: "📖" },
+  { id: "add",        label: "Přidat",   icon: "➕" },
+  { id: "sightings",  label: "Záznamy",  icon: "📋" },
+  { id: "map",        label: "Mapa",     icon: "🗺️" },
+  { id: "stats",      label: "Statistiky", icon: "📊" },
 ];
 
 export default function App() {
@@ -939,6 +1043,7 @@ export default function App() {
   const [sightings, setSightings] = useState([]);
   const [customBirds, setCustomBirds] = useState([]);
   const [preselected, setPreselected] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const allBirds = useMemo(() => [...BIRDS_BUILTIN, ...customBirds], [customBirds]);
 
@@ -951,59 +1056,75 @@ export default function App() {
     const u = [...sightings, s];
     setSightings(u); STORE.set("ptaci-sightings", u);
     setPreselected(null); setPage("sightings");
+    setToast(`✅ ${s.birdName} uložen!`);
   }, [sightings]);
 
   const del = useCallback((id) => {
-    const u = sightings.filter(s=>s.id!==id);
+    const u = sightings.filter(s => s.id !== id);
     setSightings(u); STORE.set("ptaci-sightings", u);
+    setToast("🗑️ Záznam smazán");
   }, [sightings]);
 
   const addBird = useCallback((b) => {
     const u = [...customBirds, b];
     setCustomBirds(u); STORE.set("ptaci-custom-birds", u);
+    setToast(`🐦 ${b.name} přidán do atlasu!`);
   }, [customBirds]);
 
-  const goAdd = useCallback((bird) => { setPreselected(bird||null); setPage("add"); }, []);
+  const goAdd = useCallback((bird) => { setPreselected(bird || null); setPage("add"); }, []);
 
   return (
-    <div style={{ minHeight:"100vh",background:T.bg }}>
+    <div style={{ minHeight: "100vh", minHeight: "100dvh", background: T.bg }}>
       <style>{CSS}</style>
 
+      {/* Desktop header */}
       <header style={{
-        background:`linear-gradient(145deg,${T.dark},${T.darkMid})`,
-        padding:"18px 20px 0",position:"sticky",top:0,zIndex:40,
-        boxShadow:"0 2px 16px rgba(0,0,0,.18)",
+        background: `linear-gradient(145deg,${T.dark},${T.darkMid})`,
+        padding: "14px 16px 0", position: "sticky", top: 0, zIndex: 40,
+        boxShadow: "0 2px 16px rgba(0,0,0,.18)",
       }}>
-        <div style={{ maxWidth:920,margin:"0 auto" }}>
-          <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:12 }}>
-            <span style={{ fontSize:26 }}>🪶</span>
-            <h1 style={{ fontFamily:ff,fontSize:24,fontWeight:700,color:T.cream,letterSpacing:"-.3px" }}>Ptačí deník</h1>
+        <div style={{ maxWidth: 920, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 24 }}>🪶</span>
+            <h1 style={{ fontFamily: ff, fontSize: 22, fontWeight: 700, color: T.cream, letterSpacing: "-.3px" }}>Ptačí deník</h1>
             <span style={{
-              fontFamily:fs,fontSize:10,fontWeight:600,color:"rgba(255,255,255,.5)",
-              background:"rgba(255,255,255,.1)",padding:"2px 10px",borderRadius:10,
-            }}>rodinný · {allBirds.length} druhů</span>
+              fontFamily: fs, fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.45)",
+              background: "rgba(255,255,255,.1)", padding: "2px 10px", borderRadius: 10,
+            }}>{allBirds.length} druhů</span>
           </div>
-          <nav style={{ display:"flex",gap:2,overflowX:"auto" }}>
+          <nav className="top-nav">
             {TABS.map(t => (
-              <button key={t.id} onClick={()=>{setPage(t.id);setPreselected(null)}} style={{
-                fontFamily:fs,fontSize:13,fontWeight:600,padding:"9px 16px",
-                borderRadius:"10px 10px 0 0",border:"none",cursor:"pointer",whiteSpace:"nowrap",
-                background:page===t.id?T.bg:"transparent",
-                color:page===t.id?T.green:"rgba(255,255,255,.55)",
-                transition:"all .2s",
+              <button key={t.id} onClick={() => { setPage(t.id); setPreselected(null) }} style={{
+                background: page === t.id ? T.bg : "transparent",
+                color: page === t.id ? T.green : "rgba(255,255,255,.55)",
               }}>{t.icon} {t.label}</button>
             ))}
           </nav>
         </div>
       </header>
 
-      <main style={{ maxWidth:920,margin:"0 auto",padding:"22px 16px 60px" }}>
-        {page==="atlas" && <AtlasPage birds={allBirds} sightings={sightings} onAddSighting={goAdd} onAddBird={addBird} />}
-        {page==="add" && <AddPage birds={allBirds} preselected={preselected} onSave={save} onCancel={()=>setPage("atlas")} />}
-        {page==="sightings" && <ListPage sightings={sightings} onDelete={del} />}
-        {page==="map" && <SightingsMap sightings={sightings} />}
-        {page==="stats" && <StatsPage sightings={sightings} totalBirds={allBirds.length} />}
+      {/* Content */}
+      <main className="main-content" style={{ maxWidth: 920, margin: "0 auto", padding: "18px 14px 24px" }}>
+        {page === "atlas" && <AtlasPage birds={allBirds} sightings={sightings} onAddSighting={goAdd} onAddBird={addBird} />}
+        {page === "add" && <AddPage birds={allBirds} preselected={preselected} onSave={save} onCancel={() => setPage("atlas")} />}
+        {page === "sightings" && <ListPage sightings={sightings} onDelete={del} />}
+        {page === "map" && <SightingsMap sightings={sightings} />}
+        {page === "stats" && <StatsPage sightings={sightings} totalBirds={allBirds.length} />}
       </main>
+
+      {/* Mobile bottom nav */}
+      <nav className="bottom-nav">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => { setPage(t.id); setPreselected(null) }}
+            className={page === t.id ? "active" : ""}>
+            <span className="nav-icon">{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* Toast */}
+      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>
   );
 }
