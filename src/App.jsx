@@ -453,9 +453,54 @@ function BirdInfoPanel({ birdName }) {
    ADD BIRD MODAL
    ═══════════════════════════════════════════════ */
 
-function AddBirdModal({ onClose, onAdd }) {
-  const [name, setName] = useState("");
+function AddBirdModal({ onClose, onAdd, existingBirds }) {
+  const [query, setQuery] = useState("");
   const [category, setCategory] = useState("pevci");
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+  const debounceRef = useRef(null);
+
+  const searchAI = async (q) => {
+    if (q.length < 2) { setSuggestions([]); return; }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q }),
+      });
+      const data = await res.json();
+      const filtered = (data.suggestions || []).filter(
+        s => !existingBirds.some(b => b.name.toLowerCase() === s.name.toLowerCase())
+      );
+      setSuggestions(filtered);
+    } catch { setSuggestions([]); }
+    setLoading(false);
+  };
+
+  const handleInput = (val) => {
+    setQuery(val);
+    setSelectedSuggestion(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => searchAI(val), 400);
+  };
+
+  const pickSuggestion = (s) => {
+    setSelectedSuggestion(s);
+    setQuery(s.name);
+    setCategory(s.category || "pevci");
+    setSuggestions([]);
+  };
+
+  const handleAdd = () => {
+    const name = selectedSuggestion?.name || query.trim();
+    if (!name) return;
+    const cat = selectedSuggestion?.category || category;
+    const latin = selectedSuggestion?.latin || null;
+    onAdd({ id: uid(), name, category: cat, latin, custom: true });
+    onClose();
+  };
 
   return (
     <div style={{
@@ -466,20 +511,73 @@ function AddBirdModal({ onClose, onAdd }) {
         background: T.card, borderRadius: "20px 20px 0 0", padding: "24px 20px 32px",
         width: "100%", maxWidth: 440, boxShadow: "0 -10px 40px rgba(0,0,0,.2)",
       }}>
-        <h3 style={{ fontFamily: ff, fontSize: 22, fontWeight: 700, color: T.text, marginBottom: 18 }}>Přidat nový druh</h3>
-        <div style={{ marginBottom: 14 }}>
+        <h3 style={{ fontFamily: ff, fontSize: 22, fontWeight: 700, color: T.text, marginBottom: 6 }}>Přidat nový druh</h3>
+        <p style={{ fontFamily: fs, fontSize: 13, color: T.textMuted, marginBottom: 16 }}>
+          Začněte psát a AI atlas navrhne ptáky z české ornitologie
+        </p>
+        <div style={{ marginBottom: 14, position: "relative" }}>
           <Label>Název druhu *</Label>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Např. Orel skalní" autoFocus />
+          <input value={query} onChange={e => handleInput(e.target.value)}
+            placeholder="Začněte psát, např. 'orel', 'sýk', 'čáp'…" autoFocus />
+          {loading && <span style={{
+            position: "absolute", right: 14, top: 34, fontSize: 14,
+            animation: "spin 1s linear infinite", display: "inline-block",
+          }}>🔄</span>}
+          {selectedSuggestion && <span style={{ position: "absolute", right: 14, top: 34, fontSize: 16 }}>✅</span>}
+
+          {suggestions.length > 0 && (
+            <div style={{
+              background: T.white, border: `1.5px solid ${T.green}`, borderRadius: 10,
+              maxHeight: 200, overflowY: "auto", marginTop: 4,
+              boxShadow: "0 8px 24px rgba(0,0,0,.12)",
+            }}>
+              <div style={{ padding: "6px 12px", fontFamily: fs, fontSize: 11, color: T.green, fontWeight: 600, borderBottom: `1px solid ${T.border}` }}>
+                📚 Návrhy z AI atlasu:
+              </div>
+              {suggestions.map((s, i) => (
+                <div key={i} onClick={() => pickSuggestion(s)} style={{
+                  padding: "11px 14px", cursor: "pointer", fontFamily: fs, fontSize: 14,
+                  display: "flex", alignItems: "center", gap: 8,
+                  borderBottom: `1px solid ${T.border}22`,
+                  WebkitTapHighlightColor: "transparent",
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = T.greenSoft}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <span>{CATEGORIES[s.category]?.icon || "🐦"}</span>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{s.name}</div>
+                    {s.latin && <div style={{ fontSize: 11, color: T.textMuted, fontStyle: "italic" }}>{s.latin}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div style={{ marginBottom: 20 }}>
-          <Label>Kategorie</Label>
-          <select value={category} onChange={e => setCategory(e.target.value)}>
-            {Object.entries(CATEGORIES).map(([k, c]) => <option key={k} value={k}>{c.icon} {c.name}</option>)}
-          </select>
-        </div>
+
+        {!selectedSuggestion && query.length >= 2 && !loading && (
+          <div style={{ marginBottom: 14 }}>
+            <Label>Kategorie</Label>
+            <select value={category} onChange={e => setCategory(e.target.value)}>
+              {Object.entries(CATEGORIES).map(([k, c]) => <option key={k} value={k}>{c.icon} {c.name}</option>)}
+            </select>
+          </div>
+        )}
+
+        {selectedSuggestion && (
+          <div style={{
+            background: T.greenSoft, borderRadius: 10, padding: "10px 14px", marginBottom: 14,
+            fontFamily: fs, fontSize: 13, color: T.greenText,
+          }}>
+            ✅ <strong>{selectedSuggestion.name}</strong>
+            {selectedSuggestion.latin && <span style={{ fontStyle: "italic" }}> ({selectedSuggestion.latin})</span>}
+            {" · "}{CATEGORIES[selectedSuggestion.category]?.icon} {CATEGORIES[selectedSuggestion.category]?.name}
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 10 }}>
-          <Btn primary onClick={() => { if (name.trim()) { onAdd({ id: uid(), name: name.trim(), category, custom: true }); onClose() } }}
-            disabled={!name.trim()} style={{ flex: 1 }}>✓ Přidat druh</Btn>
+          <Btn primary onClick={handleAdd}
+            disabled={!query.trim()} style={{ flex: 1 }}>✓ Přidat druh</Btn>
           <Btn onClick={onClose}>Zrušit</Btn>
         </div>
       </div>
@@ -661,7 +759,7 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
         <div style={{ textAlign: "center", padding: 40, fontFamily: fs, color: T.textMuted }}>Žádný pták neodpovídá hledání</div>
       )}
 
-      {showAddBird && <AddBirdModal onClose={() => setShowAddBird(false)} onAdd={onAddBird} />}
+      {showAddBird && <AddBirdModal onClose={() => setShowAddBird(false)} onAdd={onAddBird} existingBirds={birds} />}
     </div>
   );
 }
@@ -670,7 +768,7 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
    PAGE: ADD SIGHTING
    ═══════════════════════════════════════════════ */
 
-function AddPage({ birds, onSave, onCancel, preselected }) {
+function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
   const [birdId, setBirdId] = useState(preselected?.id || "");
   const [birdSearch, setBirdSearch] = useState(preselected?.name || "");
   const [showDrop, setShowDrop] = useState(false);
@@ -682,13 +780,50 @@ function AddPage({ birds, onSave, onCancel, preselected }) {
   const [notes, setNotes] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
   const dropRef = useRef(null);
+  const aiDebounce = useRef(null);
 
   const filteredBirds = useMemo(() => {
     if (!birdSearch) return birds;
     const q = birdSearch.toLowerCase();
     return birds.filter(b => b.name.toLowerCase().includes(q));
   }, [birdSearch, birds]);
+
+  const searchAI = async (q) => {
+    if (q.length < 2) { setAiSuggestions([]); return; }
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q }),
+      });
+      const data = await res.json();
+      const filtered = (data.suggestions || []).filter(
+        s => !birds.some(b => b.name.toLowerCase() === s.name.toLowerCase())
+      );
+      setAiSuggestions(filtered);
+    } catch { setAiSuggestions([]); }
+    setAiLoading(false);
+  };
+
+  const handleBirdInput = (val) => {
+    setBirdSearch(val); setBirdId(""); setShowDrop(true);
+    setAiSuggestions([]);
+    if (aiDebounce.current) clearTimeout(aiDebounce.current);
+    if (val.length >= 2) {
+      aiDebounce.current = setTimeout(() => searchAI(val), 600);
+    }
+  };
+
+  const addAndSelectAiBird = (s) => {
+    const newBird = { id: uid(), name: s.name, category: s.category || "pevci", latin: s.latin, custom: true };
+    onAddBird(newBird);
+    setBirdId(newBird.id); setBirdSearch(newBird.name);
+    setShowDrop(false); setAiSuggestions([]);
+  };
 
   useEffect(() => {
     const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setShowDrop(false); };
@@ -731,7 +866,7 @@ function AddPage({ birds, onSave, onCancel, preselected }) {
           <Label>Druh ptáka *</Label>
           <div style={{ position: "relative" }}>
             <input value={birdSearch}
-              onChange={e => { setBirdSearch(e.target.value); setBirdId(""); setShowDrop(true) }}
+              onChange={e => handleBirdInput(e.target.value)}
               onFocus={() => setShowDrop(true)}
               placeholder="Začněte psát název ptáka…"
               style={{ borderColor: birdId ? T.green : undefined, paddingRight: 40 }}
@@ -757,10 +892,39 @@ function AddPage({ birds, onSave, onCancel, preselected }) {
                   {b.custom && <span style={{ fontSize: 10, color: T.amber, fontWeight: 700 }}>(vlastní)</span>}
                 </div>
               ))}
-              {filteredBirds.length === 0 && (
+              {filteredBirds.length === 0 && aiSuggestions.length === 0 && !aiLoading && birdSearch.length >= 2 && (
                 <div style={{ padding: 14, fontFamily: fs, fontSize: 13, color: T.textMuted }}>
                   Druh nenalezen — přidejte v Atlasu → „+ Nový druh"
                 </div>
+              )}
+              {aiLoading && (
+                <div style={{ padding: 14, fontFamily: fs, fontSize: 13, color: T.textMuted, textAlign: "center" }}>
+                  <span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>🔄</span> Hledám v AI atlasu…
+                </div>
+              )}
+              {aiSuggestions.length > 0 && (
+                <>
+                  <div style={{ padding: "8px 14px", fontFamily: fs, fontSize: 11, color: T.green, fontWeight: 700, borderTop: filteredBirds.length > 0 ? `2px solid ${T.green}40` : "none", background: T.greenSoft + "80" }}>
+                    📚 Návrhy z AI atlasu (kliknutím přidáte):
+                  </div>
+                  {aiSuggestions.map((s, i) => (
+                    <div key={`ai-${i}`} onClick={() => addAndSelectAiBird(s)} style={{
+                      padding: "11px 14px", cursor: "pointer", fontFamily: fs, fontSize: 14,
+                      display: "flex", alignItems: "center", gap: 8,
+                      background: T.amberSoft + "60", borderBottom: `1px solid ${T.border}22`,
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.background = T.greenSoft}
+                      onMouseLeave={e => e.currentTarget.style.background = T.amberSoft + "60"}
+                    >
+                      <span>{CATEGORIES[s.category]?.icon || "🐦"}</span>
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{s.name}</div>
+                        {s.latin && <div style={{ fontSize: 11, color: T.textMuted, fontStyle: "italic" }}>{s.latin}</div>}
+                      </div>
+                      <span style={{ marginLeft: "auto", fontSize: 10, color: T.amber, fontWeight: 700 }}>+ PŘIDAT</span>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
           )}
@@ -1106,7 +1270,7 @@ export default function App() {
       {/* Content */}
       <main className="main-content" style={{ maxWidth: 920, margin: "0 auto", padding: "18px 14px 24px" }}>
         {page === "atlas" && <AtlasPage birds={allBirds} sightings={sightings} onAddSighting={goAdd} onAddBird={addBird} />}
-        {page === "add" && <AddPage birds={allBirds} preselected={preselected} onSave={save} onCancel={() => setPage("atlas")} />}
+        {page === "add" && <AddPage birds={allBirds} preselected={preselected} onSave={save} onCancel={() => setPage("atlas")} onAddBird={addBird} />}
         {page === "sightings" && <ListPage sightings={sightings} onDelete={del} />}
         {page === "map" && <SightingsMap sightings={sightings} />}
         {page === "stats" && <StatsPage sightings={sightings} totalBirds={allBirds.length} />}
