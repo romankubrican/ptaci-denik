@@ -5,6 +5,16 @@ import {
 } from "recharts";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { createClient } from "@supabase/supabase-js";
+
+/* ═══════════════════════════════════════════════
+   SUPABASE
+   ═══════════════════════════════════════════════ */
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 /* ═══════════════════════════════════════════════
    DATA
@@ -17,41 +27,6 @@ const CATEGORIES = {
   splhavci: { name: "Šplhavci",    icon: "🪶", color: "#B8860B" },
   ostatni:  { name: "Ostatní",     icon: "🕊️", color: "#6B5B73" },
 };
-
-const BIRDS_BUILTIN = [
-  ["Bělořit šedý","pevci"],["Berneška velká","vodni"],["Brhlík lesní","pevci"],
-  ["Budníček menší/velký","pevci"],["Budníček lesní","pevci"],["Čáp bílý","ostatni"],
-  ["Červenka obecná","pevci"],["Čírka obecná","vodni"],["Čížek obecný","pevci"],
-  ["Datel černý","splhavci"],["Datlík tříprstý","splhavci"],["Dlask tlustozobý","pevci"],
-  ["Drozd zpěvný","pevci"],["Drozd kvíčala","pevci"],["Drozd brávník","pevci"],
-  ["Dudek chocholatý","ostatni"],["Havran polní","ostatni"],["Holub hřivnáč","ostatni"],
-  ["Hrdlička zahradní","ostatni"],["Husa divoká","vodni"],["Husice nilská","vodni"],
-  ["Hvízdák eurasijský","vodni"],["Hýl obecný","pevci"],["Jeřáb popelavý","vodni"],
-  ["Jiřička obecná","ostatni"],["Kachna divoká","vodni"],["Káně lesní","dravci"],
-  ["Kavka obecná","ostatni"],["Konipas bílý","pevci"],["Konipas horský","pevci"],
-  ["Konopka obecná","pevci"],["Kormorán velký","vodni"],["Koroptev polní","ostatni"],
-  ["Kos černý","pevci"],["Kos horský","pevci"],["Krahujec obecný","dravci"],
-  ["Krkavec velký","ostatni"],["Králíček ohnivý","pevci"],["Králíček obecný","pevci"],
-  ["Křivka obecná","pevci"],["Kukačka obecná","ostatni"],["Ledňáček říční","vodni"],
-  ["Lejsek bělokrký","pevci"],["Lejsek šedý","pevci"],["Linduška horská","pevci"],
-  ["Lžičák pestrý","vodni"],["Mlynařík dlouhoocasý","pevci"],["Morčák velký","vodni"],
-  ["Orel mořský","dravci"],["Ořešník kropenatý","ostatni"],["Pěnice černohlavá","pevci"],
-  ["Pěnice hnědokřídlá","pevci"],["Pěnice pokrovní","pevci"],["Pěnkava obecná","pevci"],
-  ["Pěnkava jikavec","pevci"],["Pěvuška modrá","pevci"],["Písík obecný","vodni"],
-  ["Polák chocholačka","vodni"],["Polák velký","vodni"],["Poštolka obecná","dravci"],
-  ["Potápka černokrká","vodni"],["Potápka roháč","vodni"],["Rákosník velký","pevci"],
-  ["Rákosník zpěvný","pevci"],["Rehek domácí","pevci"],["Rehek zahradní","pevci"],
-  ["Sedmihlásek hájní","pevci"],["Skorec vodní","pevci"],["Skřivan polní","pevci"],
-  ["Slavík obecný","pevci"],["Slípka zelenonohá","vodni"],["Stehlík obecný","pevci"],
-  ["Sojka obecná","ostatni"],["Straka obecná","ostatni"],["Strakapoud velký","splhavci"],
-  ["Strakapoud prostřední","splhavci"],["Střízlík obecný","pevci"],["Strnad obecný","pevci"],
-  ["Sýkora koňadra","pevci"],["Sýkora modřinka","pevci"],["Sýkora uhelníček","pevci"],
-  ["Sýkora parukářka","pevci"],["Šoupálek krátkoprstý","pevci"],["Špaček obecný","pevci"],
-  ["Ťuhýk obecný","pevci"],["Vlaštovka obecná","ostatni"],["Vlha pestrá","ostatni"],
-  ["Volavka popelavá","vodni"],["Volavka bílá","vodni"],["Vrabec domácí","pevci"],
-  ["Vrabec polní","pevci"],["Vrána šedá","ostatni"],["Zvonek zelený","pevci"],
-  ["Zvonohlík zahradní","pevci"],["Žluna zelená","splhavci"],["Žluva hájní","pevci"],
-].map(([name, cat], i) => ({ id: i + 1, name, category: cat, custom: false }));
 
 /* ═══════════════════════════════════════════════
    THEME
@@ -70,7 +45,7 @@ const ff = `'Playfair Display','Georgia',serif`;
 const fs = `'Source Sans 3','Segoe UI',sans-serif`;
 
 /* ═══════════════════════════════════════════════
-   STORAGE
+   STORAGE (only for observer name preference)
    ═══════════════════════════════════════════════ */
 
 const STORE = {
@@ -90,6 +65,30 @@ const STORE = {
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" }) : "";
 const monthName = m => ["Led", "Úno", "Bře", "Dub", "Kvě", "Čvn", "Čvc", "Srp", "Zář", "Říj", "Lis", "Pro"][m];
+
+// Map Supabase bird row → app bird object
+const mapBird = (row) => ({
+  id: row.id,
+  name: row.name_cs,
+  category: row.category,
+  latin: row.name_latin || null,
+  custom: row.is_custom || false,
+});
+
+// Map Supabase sighting row → app sighting object
+const mapSighting = (row) => ({
+  id: row.id,
+  birdId: row.bird_id,
+  birdName: row.bird_name,
+  birdCategory: row.bird_category,
+  date: row.date,
+  location: row.location || "",
+  lat: row.lat || null,
+  lng: row.lng || null,
+  observer: row.observer || "",
+  notes: row.notes || "",
+  createdAt: row.created_at,
+});
 
 /* ═══════════════════════════════════════════════
    RESPONSIVE CSS (Mobile-first)
@@ -118,7 +117,6 @@ textarea{resize:vertical;min-height:60px}
 
 .leaflet-container{border-radius:14px !important}
 
-/* Mobile bottom nav */
 .bottom-nav{
   display:none;
   position:fixed;bottom:0;left:0;right:0;z-index:50;
@@ -135,7 +133,6 @@ textarea{resize:vertical;min-height:60px}
 .bottom-nav button.active{color:${T.green}}
 .bottom-nav button .nav-icon{font-size:20px;line-height:1}
 
-/* Desktop top nav */
 .top-nav{display:flex;gap:2px;overflow-x:auto}
 .top-nav button{
   font-family:${fs};font-size:13px;font-weight:600;padding:9px 16px;
@@ -150,7 +147,6 @@ textarea{resize:vertical;min-height:60px}
   main.main-content{padding-bottom:80px !important}
 }
 
-/* Card grid responsive */
 .bird-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
@@ -160,7 +156,6 @@ textarea{resize:vertical;min-height:60px}
   .bird-grid{grid-template-columns:repeat(2,1fr);gap:8px}
 }
 
-/* Stats grid */
 .stats-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
@@ -170,14 +165,12 @@ textarea{resize:vertical;min-height:60px}
   .stats-grid{grid-template-columns:1fr}
 }
 
-/* Pill scroll on mobile */
 .pill-row{display:flex;gap:5px;flex-wrap:wrap}
 @media(max-width:640px){
   .pill-row{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
   .pill-row::-webkit-scrollbar{display:none}
 }
 
-/* Touch-friendly buttons */
 @media(max-width:640px){
   .touch-btn{min-height:44px !important;min-width:44px !important}
 }
@@ -243,7 +236,7 @@ function Label({ children }) {
 }
 
 /* ═══════════════════════════════════════════════
-   LEAFLET MAP - Sightings overview
+   LEAFLET MAP
    ═══════════════════════════════════════════════ */
 
 function SightingsMap({ sightings }) {
@@ -312,7 +305,7 @@ function SightingsMap({ sightings }) {
 }
 
 /* ═══════════════════════════════════════════════
-   MAP PICKER (select location by tapping map)
+   MAP PICKER
    ═══════════════════════════════════════════════ */
 
 function MapPicker({ lat, lng, onSelect, onClose }) {
@@ -374,7 +367,7 @@ function MapPicker({ lat, lng, onSelect, onClose }) {
 }
 
 /* ═══════════════════════════════════════════════
-   AI ATLAS (/api/atlas serverless function)
+   AI ATLAS
    ═══════════════════════════════════════════════ */
 
 function BirdInfoPanel({ birdName }) {
@@ -498,7 +491,7 @@ function AddBirdModal({ onClose, onAdd, existingBirds }) {
     if (!name) return;
     const cat = selectedSuggestion?.category || category;
     const latin = selectedSuggestion?.latin || null;
-    onAdd({ id: uid(), name, category: cat, latin, custom: true });
+    onAdd({ name, category: cat, latin, custom: true });
     onClose();
   };
 
@@ -576,8 +569,7 @@ function AddBirdModal({ onClose, onAdd, existingBirds }) {
         )}
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Btn primary onClick={handleAdd}
-            disabled={!query.trim()} style={{ flex: 1 }}>✓ Přidat druh</Btn>
+          <Btn primary onClick={handleAdd} disabled={!query.trim()} style={{ flex: 1 }}>✓ Přidat druh</Btn>
           <Btn onClick={onClose}>Zrušit</Btn>
         </div>
       </div>
@@ -586,7 +578,7 @@ function AddBirdModal({ onClose, onAdd, existingBirds }) {
 }
 
 /* ═══════════════════════════════════════════════
-   TOAST notification
+   TOAST
    ═══════════════════════════════════════════════ */
 
 function Toast({ message, onDone }) {
@@ -638,7 +630,6 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
     return sightings.filter(s => s.birdId === selected.id).sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [selected, sightings]);
 
-  /* ─── Bird detail ─── */
   if (selected) {
     const cat = CATEGORIES[selected.category];
     return (
@@ -701,7 +692,6 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
     );
   }
 
-  /* ─── Atlas grid ─── */
   return (
     <div className="fade-up">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
@@ -818,10 +808,11 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
     }
   };
 
-  const addAndSelectAiBird = (s) => {
-    const newBird = { id: uid(), name: s.name, category: s.category || "pevci", latin: s.latin, custom: true };
-    onAddBird(newBird);
-    setBirdId(newBird.id); setBirdSearch(newBird.name);
+  const addAndSelectAiBird = async (s) => {
+    const newBird = await onAddBird({ name: s.name, category: s.category || "pevci", latin: s.latin, custom: true });
+    if (newBird) {
+      setBirdId(newBird.id); setBirdSearch(newBird.name);
+    }
     setShowDrop(false); setAiSuggestions([]);
   };
 
@@ -837,7 +828,7 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       p => { setLat(p.coords.latitude.toFixed(6)); setLng(p.coords.longitude.toFixed(6)); setGeoLoading(false); },
-      (err) => { setGeoLoading(false); alert("Nepodařilo se zjistit polohu. Povolte přístup k poloze v nastavení."); },
+      () => { setGeoLoading(false); alert("Nepodařilo se zjistit polohu. Povolte přístup k poloze."); },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
@@ -848,9 +839,9 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
     if (!bird) return;
     STORE.set("ptaci-last-observer", observer);
     onSave({
-      id: uid(), birdId: bird.id, birdName: bird.name, birdCategory: bird.category,
+      bird_id: bird.id, bird_name: bird.name, bird_category: bird.category,
       date, location, lat: lat ? Number(lat) : null, lng: lng ? Number(lng) : null,
-      observer, notes, createdAt: new Date().toISOString(),
+      observer, notes,
     });
   };
 
@@ -861,7 +852,6 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
       <h2 style={{ fontFamily: ff, fontSize: 26, fontWeight: 700, color: T.text, marginBottom: 16 }}>Nové pozorování</h2>
       <div style={{ background: T.card, borderRadius: 18, padding: "20px 16px", border: `1.5px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 14 }}>
 
-        {/* Bird autocomplete */}
         <div ref={dropRef} style={{ position: "relative" }}>
           <Label>Druh ptáka *</Label>
           <div style={{ position: "relative" }}>
@@ -878,7 +868,6 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
               position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
               background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 10,
               maxHeight: 220, overflowY: "auto", marginTop: 4, boxShadow: "0 8px 24px rgba(0,0,0,.12)",
-              WebkitOverflowScrolling: "touch",
             }}>
               {filteredBirds.slice(0, 30).map(b => (
                 <div key={b.id} onClick={() => selectBird(b)} style={{
@@ -886,7 +875,6 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
                   display: "flex", alignItems: "center", gap: 8,
                   background: birdId === b.id ? T.greenSoft : "transparent",
                   borderBottom: `1px solid ${T.border}22`,
-                  WebkitTapHighlightColor: "transparent",
                 }}>
                   {CATEGORIES[b.category]?.icon} {b.name}
                   {b.custom && <span style={{ fontSize: 10, color: T.amber, fontWeight: 700 }}>(vlastní)</span>}
@@ -904,7 +892,7 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
               )}
               {aiSuggestions.length > 0 && (
                 <>
-                  <div style={{ padding: "8px 14px", fontFamily: fs, fontSize: 11, color: T.green, fontWeight: 700, borderTop: filteredBirds.length > 0 ? `2px solid ${T.green}40` : "none", background: T.greenSoft + "80" }}>
+                  <div style={{ padding: "8px 14px", fontFamily: fs, fontSize: 11, color: T.green, fontWeight: 700, background: T.greenSoft + "80" }}>
                     📚 Návrhy z AI atlasu (kliknutím přidáte):
                   </div>
                   {aiSuggestions.map((s, i) => (
@@ -912,10 +900,7 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
                       padding: "11px 14px", cursor: "pointer", fontFamily: fs, fontSize: 14,
                       display: "flex", alignItems: "center", gap: 8,
                       background: T.amberSoft + "60", borderBottom: `1px solid ${T.border}22`,
-                    }}
-                      onMouseEnter={e => e.currentTarget.style.background = T.greenSoft}
-                      onMouseLeave={e => e.currentTarget.style.background = T.amberSoft + "60"}
-                    >
+                    }}>
                       <span>{CATEGORIES[s.category]?.icon || "🐦"}</span>
                       <div>
                         <div style={{ fontWeight: 600 }}>{s.name}</div>
@@ -940,7 +925,6 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
           <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Např. Rybník u Lipnice" />
         </div>
 
-        {/* GPS */}
         <div>
           <Label>Poloha GPS</Label>
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
@@ -964,7 +948,7 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
             </div>
           ) : (
             <p style={{ fontFamily: fs, fontSize: 12, color: T.textMuted }}>
-              Klikněte na tlačítko pro zjištění polohy z telefonu nebo vyberte na mapě
+              Klikněte na tlačítko pro zjištění polohy nebo vyberte na mapě
             </p>
           )}
         </div>
@@ -1195,53 +1179,80 @@ function StatsPage({ sightings, totalBirds }) {
    ═══════════════════════════════════════════════ */
 
 const TABS = [
-  { id: "atlas",      label: "Atlas",    icon: "📖" },
-  { id: "add",        label: "Přidat",   icon: "➕" },
-  { id: "sightings",  label: "Záznamy",  icon: "📋" },
-  { id: "map",        label: "Mapa",     icon: "🗺️" },
+  { id: "atlas",      label: "Atlas",      icon: "📖" },
+  { id: "add",        label: "Přidat",     icon: "➕" },
+  { id: "sightings",  label: "Záznamy",    icon: "📋" },
+  { id: "map",        label: "Mapa",       icon: "🗺️" },
   { id: "stats",      label: "Statistiky", icon: "📊" },
 ];
 
 export default function App() {
   const [page, setPage] = useState("atlas");
   const [sightings, setSightings] = useState([]);
-  const [customBirds, setCustomBirds] = useState([]);
+  const [birds, setBirds] = useState([]);
   const [preselected, setPreselected] = useState(null);
   const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const allBirds = useMemo(() => [...BIRDS_BUILTIN, ...customBirds], [customBirds]);
-
+  // Load data from Supabase on mount
   useEffect(() => {
-    setSightings(STORE.get("ptaci-sightings") || []);
-    setCustomBirds(STORE.get("ptaci-custom-birds") || []);
+    const load = async () => {
+      setLoading(true);
+      const [{ data: birdsData }, { data: sightingsData }] = await Promise.all([
+        supabase.from("birds").select("*").order("name_cs"),
+        supabase.from("sightings").select("*").order("date", { ascending: false }),
+      ]);
+      if (birdsData) setBirds(birdsData.map(mapBird));
+      if (sightingsData) setSightings(sightingsData.map(mapSighting));
+      setLoading(false);
+    };
+    load();
   }, []);
 
-  const save = useCallback((s) => {
-    const u = [...sightings, s];
-    setSightings(u); STORE.set("ptaci-sightings", u);
+  // Save sighting to Supabase
+  const save = useCallback(async (s) => {
+    const { data, error } = await supabase.from("sightings").insert([s]).select().single();
+    if (error) { setToast("❌ Chyba při ukládání!"); return; }
+    setSightings(prev => [mapSighting(data), ...prev]);
     setPreselected(null); setPage("sightings");
-    setToast(`✅ ${s.birdName} uložen!`);
-  }, [sightings]);
+    setToast(`✅ ${s.bird_name} uložen!`);
+  }, []);
 
-  const del = useCallback((id) => {
-    const u = sightings.filter(s => s.id !== id);
-    setSightings(u); STORE.set("ptaci-sightings", u);
+  // Delete sighting from Supabase
+  const del = useCallback(async (id) => {
+    const { error } = await supabase.from("sightings").delete().eq("id", id);
+    if (error) { setToast("❌ Chyba při mazání!"); return; }
+    setSightings(prev => prev.filter(s => s.id !== id));
     setToast("🗑️ Záznam smazán");
-  }, [sightings]);
+  }, []);
 
-  const addBird = useCallback((b) => {
-    const u = [...customBirds, b];
-    setCustomBirds(u); STORE.set("ptaci-custom-birds", u);
+  // Add custom bird to Supabase
+  const addBird = useCallback(async (b) => {
+    const { data, error } = await supabase.from("birds").insert([{
+      name_cs: b.name, category: b.category, name_latin: b.latin || null, is_custom: true,
+    }]).select().single();
+    if (error) { setToast("❌ Chyba při přidávání ptáka!"); return null; }
+    const mapped = mapBird(data);
+    setBirds(prev => [...prev, mapped].sort((a, b) => a.name.localeCompare(b.name, "cs")));
     setToast(`🐦 ${b.name} přidán do atlasu!`);
-  }, [customBirds]);
+    return mapped;
+  }, []);
 
   const goAdd = useCallback((bird) => { setPreselected(bird || null); setPage("add"); }, []);
+
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <style>{CSS}</style>
+      <span style={{ fontSize: 48 }}>🪶</span>
+      <div style={{ fontFamily: ff, fontSize: 20, color: T.text }}>Načítám Ptačí deník…</div>
+      <span style={{ fontSize: 24, display: "inline-block", animation: "spin 1s linear infinite" }}>🔄</span>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: "100vh", minHeight: "100dvh", background: T.bg }}>
       <style>{CSS}</style>
 
-      {/* Desktop header */}
       <header style={{
         background: `linear-gradient(145deg,${T.dark},${T.darkMid})`,
         padding: "14px 16px 0", position: "sticky", top: 0, zIndex: 40,
@@ -1254,7 +1265,7 @@ export default function App() {
             <span style={{
               fontFamily: fs, fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.45)",
               background: "rgba(255,255,255,.1)", padding: "2px 10px", borderRadius: 10,
-            }}>{allBirds.length} druhů</span>
+            }}>{birds.length} druhů</span>
           </div>
           <nav className="top-nav">
             {TABS.map(t => (
@@ -1267,16 +1278,14 @@ export default function App() {
         </div>
       </header>
 
-      {/* Content */}
       <main className="main-content" style={{ maxWidth: 920, margin: "0 auto", padding: "18px 14px 24px" }}>
-        {page === "atlas" && <AtlasPage birds={allBirds} sightings={sightings} onAddSighting={goAdd} onAddBird={addBird} />}
-        {page === "add" && <AddPage birds={allBirds} preselected={preselected} onSave={save} onCancel={() => setPage("atlas")} onAddBird={addBird} />}
+        {page === "atlas" && <AtlasPage birds={birds} sightings={sightings} onAddSighting={goAdd} onAddBird={addBird} />}
+        {page === "add" && <AddPage birds={birds} preselected={preselected} onSave={save} onCancel={() => setPage("atlas")} onAddBird={addBird} />}
         {page === "sightings" && <ListPage sightings={sightings} onDelete={del} />}
         {page === "map" && <SightingsMap sightings={sightings} />}
-        {page === "stats" && <StatsPage sightings={sightings} totalBirds={allBirds.length} />}
+        {page === "stats" && <StatsPage sightings={sightings} totalBirds={birds.length} />}
       </main>
 
-      {/* Mobile bottom nav */}
       <nav className="bottom-nav">
         {TABS.map(t => (
           <button key={t.id} onClick={() => { setPage(t.id); setPreselected(null) }}
@@ -1287,7 +1296,6 @@ export default function App() {
         ))}
       </nav>
 
-      {/* Toast */}
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>
   );
