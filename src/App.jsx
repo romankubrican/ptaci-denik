@@ -87,6 +87,7 @@ const mapSighting = (row) => ({
   lng: row.lng || null,
   observer: row.observer || "",
   notes: row.notes || "",
+  photoUrl: row.photo_url || null,
   createdAt: row.created_at,
 });
 
@@ -684,6 +685,12 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
                   {s.lat ? ` · 🌐 ${Number(s.lat).toFixed(4)}, ${Number(s.lng).toFixed(4)}` : ""}
                 </div>
                 {s.notes && <div style={{ fontFamily: fs, fontSize: 12, color: T.brownMid, marginTop: 5, fontStyle: "italic" }}>„{s.notes}"</div>}
+                {s.photoUrl && (
+                  <img src={s.photoUrl} alt={s.birdName} style={{
+                    marginTop: 8, width: "100%", maxHeight: 200, objectFit: "cover",
+                    borderRadius: 10, border: `1px solid ${T.border}`,
+                  }} />
+                )}
               </div>
             ))}
           </div>
@@ -772,8 +779,21 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef(null);
   const dropRef = useRef(null);
   const aiDebounce = useRef(null);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhoto(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target.result);
+    reader.readAsDataURL(file);
+  };
 
   const filteredBirds = useMemo(() => {
     if (!birdSearch) return birds;
@@ -833,15 +853,28 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!birdId || !date) return;
     const bird = birds.find(b => b.id === birdId);
     if (!bird) return;
     STORE.set("ptaci-last-observer", observer);
+    let photoUrl = null;
+    if (photo) {
+      setPhotoUploading(true);
+      const ext = photo.name.split(".").pop();
+      const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data: upData, error: upErr } = await supabase.storage
+        .from("sighting-photos").upload(path, photo, { contentType: photo.type });
+      setPhotoUploading(false);
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from("sighting-photos").getPublicUrl(path);
+        photoUrl = urlData.publicUrl;
+      }
+    }
     onSave({
       bird_id: bird.id, bird_name: bird.name, bird_category: bird.category,
       date, location, lat: lat ? Number(lat) : null, lng: lng ? Number(lng) : null,
-      observer, notes,
+      observer, notes, photo_url: photoUrl,
     });
   };
 
@@ -963,8 +996,34 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
           <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Počasí, chování ptáka…" />
         </div>
 
-        <Btn primary onClick={handleSave} disabled={!birdId || !date} style={{ width: "100%", marginTop: 4 }}>
-          💾 Uložit pozorování
+        <div>
+          <Label>Fotografie</Label>
+          <input
+            ref={photoInputRef} type="file" accept="image/*" capture="environment"
+            onChange={handlePhotoChange}
+            style={{ display: "none" }}
+          />
+          {photoPreview ? (
+            <div style={{ position: "relative" }}>
+              <img src={photoPreview} alt="Náhled" style={{
+                width: "100%", maxHeight: 220, objectFit: "cover",
+                borderRadius: 12, border: `1.5px solid ${T.border}`,
+              }} />
+              <button onClick={() => { setPhoto(null); setPhotoPreview(null); }} style={{
+                position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,.55)",
+                color: T.white, border: "none", borderRadius: 20, padding: "4px 10px",
+                cursor: "pointer", fontFamily: fs, fontSize: 12,
+              }}>✕ Odebrat</button>
+            </div>
+          ) : (
+            <Btn small onClick={() => photoInputRef.current?.click()} style={{ width: "100%" }}>
+              📷 Vyfotit / nahrát fotku
+            </Btn>
+          )}
+        </div>
+
+        <Btn primary onClick={handleSave} disabled={!birdId || !date || photoUploading} style={{ width: "100%", marginTop: 4 }}>
+          {photoUploading ? "⏳ Nahrávám fotku…" : "💾 Uložit pozorování"}
         </Btn>
         <Btn onClick={onCancel} style={{ width: "100%" }}>Zrušit</Btn>
       </div>
@@ -1064,6 +1123,12 @@ function ListPage({ sightings, onDelete }) {
                   {s.lat && <span>🌐 {Number(s.lat).toFixed(3)},{Number(s.lng).toFixed(3)}</span>}
                 </div>
                 {s.notes && <div style={{ fontFamily: fs, fontSize: 12, color: T.brownMid, marginTop: 4, fontStyle: "italic" }}>„{s.notes}"</div>}
+                {s.photoUrl && (
+                  <img src={s.photoUrl} alt={s.birdName} style={{
+                    marginTop: 8, width: "100%", maxHeight: 180, objectFit: "cover",
+                    borderRadius: 10, border: `1px solid ${T.border}`,
+                  }} />
+                )}
               </div>
               <button onClick={() => onDelete(s.id)} style={{
                 background: "none", border: "none", cursor: "pointer", fontSize: 16, color: T.textMuted, opacity: .4, padding: 6,
