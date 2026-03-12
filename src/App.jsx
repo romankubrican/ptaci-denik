@@ -687,8 +687,8 @@ function AtlasPage({ birds, sightings, onAddSighting, onAddBird }) {
                 {s.notes && <div style={{ fontFamily: fs, fontSize: 12, color: T.brownMid, marginTop: 5, fontStyle: "italic" }}>„{s.notes}"</div>}
                 {s.photoUrl && (
                   <img src={s.photoUrl} alt={s.birdName} style={{
-                    marginTop: 8, width: "100%", maxHeight: 200, objectFit: "cover",
-                    borderRadius: 10, border: `1px solid ${T.border}`,
+                    marginTop: 8, width: "100%", maxHeight: 300, objectFit: "contain",
+                    background: T.bg, borderRadius: 10, border: `1px solid ${T.border}`,
                   }} />
                 )}
               </div>
@@ -1006,8 +1006,8 @@ function AddPage({ birds, onSave, onCancel, preselected, onAddBird }) {
           {photoPreview ? (
             <div style={{ position: "relative" }}>
               <img src={photoPreview} alt="Náhled" style={{
-                width: "100%", maxHeight: 220, objectFit: "cover",
-                borderRadius: 12, border: `1.5px solid ${T.border}`,
+                width: "100%", maxHeight: 300, objectFit: "contain",
+                background: T.bg, borderRadius: 12, border: `1.5px solid ${T.border}`,
               }} />
               <button onClick={() => { setPhoto(null); setPhotoPreview(null); }} style={{
                 position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,.55)",
@@ -1125,8 +1125,8 @@ function ListPage({ sightings, onDelete }) {
                 {s.notes && <div style={{ fontFamily: fs, fontSize: 12, color: T.brownMid, marginTop: 4, fontStyle: "italic" }}>„{s.notes}"</div>}
                 {s.photoUrl && (
                   <img src={s.photoUrl} alt={s.birdName} style={{
-                    marginTop: 8, width: "100%", maxHeight: 180, objectFit: "cover",
-                    borderRadius: 10, border: `1px solid ${T.border}`,
+                    marginTop: 8, width: "100%", maxHeight: 300, objectFit: "contain",
+                    background: T.bg, borderRadius: 10, border: `1px solid ${T.border}`,
                   }} />
                 )}
               </div>
